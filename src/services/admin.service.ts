@@ -25,6 +25,10 @@ export const AdminService = {
     });
     return data;
   },
+  createUser: async (userData: any) => {
+    const { data } = await api.post('/admin/users', userData);
+    return data;
+  },
   getAuditLogs: async (page = 1, limit = 10) => {
     const { data } = await api.get('/admin/audit-logs', {
       params: { page, limit },
