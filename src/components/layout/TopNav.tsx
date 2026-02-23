@@ -13,8 +13,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuthStore } from "@/lib/store";
+import { useRouter } from "next/navigation";
 
 export function TopNav() {
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-muted bg-background/80 px-4 backdrop-blur-md md:px-6">
       <div className="flex items-center gap-4">
@@ -29,26 +39,33 @@ export function TopNav() {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-xl text-muted-foreground hover:text-foreground"
+        >
           <Bell className="h-5 w-5" />
         </Button>
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full ring-offset-background focus-visible:ring-2 focus-visible:ring-primary/20">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full ring-offset-background focus-visible:ring-2 focus-visible:ring-primary/20"
+            >
               <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                 <User className="h-4 w-4 text-muted-foreground" />
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 rounded-2xl border-muted shadow-lg">
+          <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">Log out</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

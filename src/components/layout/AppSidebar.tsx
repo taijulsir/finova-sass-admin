@@ -32,37 +32,37 @@ import { cn } from "@/lib/utils";
 const items = [
   {
     title: "Dashboard",
-    url: "/dashboard",
+    url: "/",
     icon: LayoutDashboard,
   },
   {
     title: "Organizations",
-    url: "/dashboard/organizations",
+    url: "/organizations",
     icon: Building2,
   },
   {
     title: "Subscriptions",
-    url: "/dashboard/subscriptions",
+    url: "/subscriptions",
     icon: CreditCard,
   },
   {
     title: "Users",
-    url: "/dashboard/users",
+    url: "/users",
     icon: Users,
   },
   {
     title: "Audit Logs",
-    url: "/dashboard/audit",
+    url: "/audit",
     icon: History,
   },
   {
     title: "Analytics",
-    url: "/dashboard/analytics",
+    url: "/analytics",
     icon: BarChart3,
   },
   {
     title: "Settings",
-    url: "/dashboard/settings",
+    url: "/settings",
     icon: Settings,
   },
 ];
