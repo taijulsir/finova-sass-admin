@@ -1,0 +1,65 @@
+import axios from 'axios';
+import { useAuthStore } from './store'; // Will create this
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true, // Send cookies (refresh token)
+});
+
+// Request interceptor: Add access token to headers
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response interceptor: Handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Specific logic for 401 (Unauthorized)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = useAuthStore.getState().refreshToken;
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        // Attempt refresh
+        const { data } = await axios.post(
+          `${API_URL}/auth/refresh-token`,
+          { refreshToken },
+          { withCredentials: true }
+        );
+
+        const { accessToken, refreshToken: newRefreshToken } = data.data.tokens;
+        
+        // Update store
+        useAuthStore.getState().setToken(accessToken);
+        useAuthStore.getState().setRefreshToken(newRefreshToken);
+
+        // Update failed request header
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+        // Retry original request
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed (token expired/invalid) - logout
+        useAuthStore.getState().logout();
+        window.location.href = '/login'; // Redirect to login
+        return Promise.reject(refreshError);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
