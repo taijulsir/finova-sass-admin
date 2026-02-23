@@ -25,6 +25,11 @@ api.interceptors.response.use(
 
     // Specific logic for 401 (Unauthorized)
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Do not attempt to refresh token if the request was for login
+      if (originalRequest.url?.includes('/auth/login')) {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       try {
@@ -54,8 +59,10 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed (token expired/invalid) - logout
         useAuthStore.getState().logout();
-        window.location.href = '/login'; // Redirect to login
-        return Promise.reject(refreshError);
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = '/login'; // Redirect to login
+        }
+        return Promise.reject(error); // Return original error to preserve the message
       }
     }
     return Promise.reject(error);
