@@ -25,7 +25,9 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [activeTab, setActiveTab] = useState('active');
 
   // Modal state
@@ -38,14 +40,15 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [search, page, activeTab]);
+  }, [search, page, limit, activeTab]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await AdminService.getUsers(page, 10, search, activeTab === 'active');
+      const response = await AdminService.getUsers(page, limit, search, activeTab === 'active');
       setUsers(response.data || []);
       setTotalPages(response.pagination?.totalPages || 1);
+      setTotalItems(response.pagination?.total || 0);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch users");
@@ -272,7 +275,14 @@ export default function UsersPage() {
         <Pagination 
           currentPage={page} 
           totalPages={totalPages} 
+          totalItems={totalItems}
+          limit={limit}
           onPageChange={setPage} 
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+          itemName="users"
           className="justify-end"
         />
       </div>

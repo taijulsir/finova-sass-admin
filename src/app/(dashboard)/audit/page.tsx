@@ -19,7 +19,9 @@ export default function AuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Modal state
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -27,14 +29,15 @@ export default function AuditLogsPage() {
 
   useEffect(() => {
     fetchLogs();
-  }, [page]);
+  }, [page, limit]);
 
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const response = await AdminService.getAuditLogs(page, 10);
+      const response = await AdminService.getAuditLogs(page, limit);
       setLogs(response.data || []);
       setTotalPages(response.pagination?.totalPages || 1);
+      setTotalItems(response.pagination?.total || 0);
     } catch (error) {
       console.error(error);
     } finally {
@@ -129,7 +132,14 @@ export default function AuditLogsPage() {
         <Pagination 
           currentPage={page} 
           totalPages={totalPages} 
+          totalItems={totalItems}
+          limit={limit}
           onPageChange={setPage} 
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+          itemName="logs"
           className="justify-end"
         />
       </div>
