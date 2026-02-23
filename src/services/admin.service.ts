@@ -5,9 +5,9 @@ export const AdminService = {
     const { data } = await api.get('/admin/dashboard');
     return data;
   },
-  getOrganizations: async (page = 1, limit = 10, search = '', isActive = true) => {
+  getOrganizations: async (params: any = { page: 1, limit: 10, search: '', isActive: true }) => {
     const { data } = await api.get('/admin/organizations', {
-      params: { page, limit, search, isActive },
+      params,
     });
     return data;
   },
@@ -19,9 +19,15 @@ export const AdminService = {
     const { data } = await api.get(`/admin/organizations/${id}`);
     return data;
   },
-  getUsers: async (page = 1, limit = 10, search = '', isActive = true) => {
+  getSubscriptions: async (params: any = { page: 1, limit: 10, search: '', isActive: true }) => {
+    const { data } = await api.get('/admin/organizations', {
+      params,
+    });
+    return data;
+  },
+  getUsers: async (params: any = { page: 1, limit: 10, search: '', isActive: true }) => {
     const { data } = await api.get('/admin/users', {
-      params: { page, limit, search, isActive },
+      params,
     });
     return data;
   },
@@ -29,9 +35,9 @@ export const AdminService = {
     const { data } = await api.post('/admin/users', userData);
     return data;
   },
-  getAuditLogs: async (page = 1, limit = 10) => {
+  getAuditLogs: async (params: any = { page: 1, limit: 10 }) => {
     const { data } = await api.get('/admin/audit-logs', {
-      params: { page, limit },
+      params,
     });
     return data;
   },

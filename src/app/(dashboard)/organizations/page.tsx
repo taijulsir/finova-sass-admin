@@ -1,44 +1,41 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { AdminService } from '@/services/admin.service';
 import { Plus } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { toast } from "sonner";
 import { Pagination } from "@/components/ui-system/pagination";
-import { DataTable } from "@/components/ui-system/data-table";
+import { DataTable } from "@/components/ui-system/table/DataTable";
 import { PageHeader } from "@/components/ui-system/page-header";
 import { FilterSection } from "@/components/ui-system/filter-section";
 import { OrganizationForm, OrganizationFormValues } from "./components/organization-form";
 import { OrganizationView } from "./components/organization-view";
 import { getOrganizationColumns } from "./organization-utils";
 import { useOrganizationHandlers } from "./organization-helpers";
+import { useFetchData } from "@/hooks/use-fetch-data";
 
 export default function OrganizationsPage() {
-  const [organizations, setOrganizations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [activeTab, setActiveTab] = useState('active');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchOrganizations = async () => {
-    try {
-      setLoading(true);
-      const response = await AdminService.getOrganizations(page, limit, search, activeTab === 'active');
-      setOrganizations(response.data || []);
-      setTotalPages(response.pagination?.totalPages || 1);
-      setTotalItems(response.pagination?.total || 0);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch organizations");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchParams = useMemo(() => ({
+    page,
+    limit,
+    search,
+    isActive: activeTab === 'active'
+  }), [page, limit, search, activeTab]);
+
+  const {
+    data: organizations,
+    loading,
+    totalItems,
+    totalPages,
+    refresh
+  } = useFetchData(AdminService.getOrganizations, fetchParams, [activeTab]);
 
   const {
     isAddModalOpen,
@@ -53,11 +50,7 @@ export default function OrganizationsPage() {
     handleViewOrganization,
     handleArchiveOrganization,
     handleDeleteOrganization
-  } = useOrganizationHandlers(fetchOrganizations);
-
-  useEffect(() => {
-    fetchOrganizations();
-  }, [search, page, limit, activeTab]);
+  } = useOrganizationHandlers(refresh);
 
   const handleFormSubmit = async (data: OrganizationFormValues) => {
     setIsSubmitting(true);
@@ -71,7 +64,7 @@ export default function OrganizationsPage() {
       }
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
-      fetchOrganizations(); 
+      refresh(); 
     } catch (error: any) {
       console.error(error);
       toast.error(error?.response?.data?.message || `Failed to ${isEditModalOpen ? 'update' : 'create'} organization`);
@@ -88,43 +81,49 @@ export default function OrganizationsPage() {
   }), [handleViewOrganization, handleOpenEditModal, handleArchiveOrganization, handleDeleteOrganization]);
 
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Organizations"
-        description="Manage all registered organizations."
-        action={{
-          label: "Add Organization",
-          icon: Plus,
-          onClick: handleOpenAddModal
-        }}
-      />
+    <div className="h-full flex flex-col space-y-4 overflow-hidden">
+      <div className="px-6 pt-6 shrink-0">
+        <PageHeader 
+          title="Organizations"
+          description="Manage all registered organizations."
+          action={{
+            label: "Add Organization",
+            icon: Plus,
+            onClick: handleOpenAddModal
+          }}
+        />
+      </div>
 
-      <FilterSection 
-        searchPlaceholder="Search organizations..."
-        searchValue={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setPage(1);
-        }}
-        activeTab={activeTab}
-        onTabChange={(val) => {
-          setActiveTab(val);
-          setPage(1);
-        }}
-        tabs={[
-          { label: "Active", value: "active" },
-          { label: "Archived", value: "archived" }
-        ]}
-      />
+      <div className="px-6 shrink-0">
+        <FilterSection 
+          searchPlaceholder="Search organizations..."
+          searchValue={search}
+          onSearchChange={(val) => {
+            setSearch(val);
+            setPage(1);
+          }}
+          activeTab={activeTab}
+          onTabChange={(val) => {
+            setActiveTab(val);
+            setPage(1);
+          }}
+          tabs={[
+            { label: "Active", value: "active" },
+            { label: "Archived", value: "archived" }
+          ]}
+        />
+      </div>
 
-      <DataTable 
-        columns={columns as any} 
-        data={organizations} 
-        loading={loading}
-        onRowClick={handleViewOrganization}
-      />
+      <div className="flex-1 overflow-hidden px-6">
+        <DataTable 
+          columns={columns as any} 
+          data={organizations} 
+          loading={loading}
+          onRowClick={handleViewOrganization}
+        />
+      </div>
 
-      <div className="pt-4">
+      <div className="px-6 pb-6 pt-2 border-t mt-auto shrink-0 bg-background/80 backdrop-blur-sm z-20">
         <Pagination 
           currentPage={page} 
           totalPages={totalPages} 
@@ -136,7 +135,7 @@ export default function OrganizationsPage() {
             setPage(1);
           }}
           itemName="organizations"
-          className="justify-end"
+          
         />
       </div>
 

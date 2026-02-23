@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { AdminService } from '@/services/admin.service';
-import { Search, MoreHorizontal } from 'lucide-react';
+import { FileText, MoreHorizontal } from 'lucide-react';
 import { TbEye } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
@@ -13,37 +13,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/ui-system/pagination";
-import { DataTable } from "@/components/ui-system/data-table";
+import { DataTable } from "@/components/ui-system/table/DataTable";
+import { PageHeader } from "@/components/ui-system/page-header";
+import { FilterSection } from "@/components/ui-system/filter-section";
+import { useFetchData } from "@/hooks/use-fetch-data";
+import { Badge } from "@/components/ui/badge";
 
 export default function AuditLogsPage() {
-  const [logs, setLogs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+
+  const fetchParams = useMemo(() => ({
+    page,
+    limit,
+    search,
+  }), [page, limit, search]);
+
+  const {
+    data: logs,
+    loading,
+    totalItems,
+    totalPages,
+  } = useFetchData(AdminService.getAuditLogs, fetchParams);
 
   // Modal state
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any>(null);
-
-  useEffect(() => {
-    fetchLogs();
-  }, [page, limit]);
-
-  const fetchLogs = async () => {
-    try {
-      setLoading(true);
-      const response = await AdminService.getAuditLogs(page, limit);
-      setLogs(response.data || []);
-      setTotalPages(response.pagination?.totalPages || 1);
-      setTotalItems(response.pagination?.total || 0);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleViewLog = (log: any) => {
     setSelectedLog(log);
@@ -53,43 +49,61 @@ export default function AuditLogsPage() {
   const columns = useMemo(() => [
     {
       header: "Action",
-      cell: (log: any) => <span className="font-medium text-blue-600">{log.action}</span>,
+      cell: (log: any) => (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 uppercase text-[10px] font-bold tracking-wider">
+          {log.action?.replace(/_/g, ' ')}
+        </Badge>
+      ),
     },
     {
       header: "User",
-      cell: (log: any) => <span>{log.userId?.email || log.userId}</span>,
+      cell: (log: any) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-foreground">{log.userId?.name || 'System'}</span>
+          <span className="text-xs text-muted-foreground">{log.userId?.email || 'automated'}</span>
+        </div>
+      ),
     },
     {
       header: "Resource",
-      accessorKey: "resource" as const,
+      cell: (log: any) => (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="font-mono text-[10px]">
+            {log.resource}
+          </Badge>
+        </div>
+      ),
     },
     {
       header: "Details",
+      className: "max-w-[400px]",
       cell: (log: any) => (
-        <span className="text-xs font-mono text-muted-foreground max-w-xs truncate block">
-          {JSON.stringify(log.metadata)}
-        </span>
+        <div className="max-h-15 overflow-y-auto scrollbar-none">
+          <span className="text-[10px] font-mono text-muted-foreground leading-tight block whitespace-pre-wrap">
+            {JSON.stringify(log.metadata, null, 1)}
+          </span>
+        </div>
       ),
     },
     {
       header: "Timestamp",
       cell: (log: any) => (
-        <span className="text-muted-foreground">
-          {new Date(log.createdAt).toLocaleString()}
-        </span>
+        <div className="flex flex-col text-xs">
+          <span className="text-foreground">{new Date(log.createdAt).toLocaleDateString()}</span>
+          <span className="text-muted-foreground">{new Date(log.createdAt).toLocaleTimeString()}</span>
+        </div>
       ),
     },
     {
       header: "Actions",
-      className: "text-right",
+      className: "text-right w-[80px]",
       cell: (log: any) => (
         <div className="flex items-center justify-end space-x-2">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+            className="h-8 w-8 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
             onClick={(e) => { e.stopPropagation(); handleViewLog(log); }}
-            title="View Details"
           >
             <TbEye className="h-4 w-4" />
           </Button>
@@ -100,8 +114,15 @@ export default function AuditLogsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewLog(log); }}>
-                View Full Details
+              <DropdownMenuItem onClick={() => handleViewLog(log)}>
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => {
+                  navigator.clipboard.writeText(JSON.stringify(log, null, 2));
+                }}
+              >
+                Copy JSON
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -111,24 +132,41 @@ export default function AuditLogsPage() {
   ], []);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Audit Logs</h1>
-          <p className="text-muted-foreground">System-wide activity logs.</p>
+    <div className="h-full flex flex-col overflow-hidden bg-background">
+      <div className="shrink-0 p-6">
+        <PageHeader 
+          title="Audit Logs"
+          description="Track system activities and resource changes across the platform."
+          action={{
+            label: "Export Logs",
+            icon: FileText,
+            onClick: () => {}, // TODO: Implement CSV export
+            variant: "outline"
+          }}
+        />
+        
+        <div className="mt-6">
+          <FilterSection 
+            searchPlaceholder="Search logs by user, action or resource..."
+            searchValue={search}
+            onSearchChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+          />
         </div>
       </div>
 
-      <DataTable 
-        columns={columns} 
-        data={logs} 
-        loading={loading}
-        onRowClick={handleViewLog}
-        emptyMessage="No audit logs found."
-      />
+      <div className="flex-1 overflow-hidden px-6 pb-4">
+        <DataTable 
+          columns={columns as any} 
+          data={logs} 
+          loading={loading}
+          onRowClick={handleViewLog}
+        />
+      </div>
 
-      {/* Pagination */}
-      <div className="pt-4">
+      <div className="shrink-0 p-6 pt-2 border-t mt-auto bg-background/80 backdrop-blur-sm z-20">
         <Pagination 
           currentPage={page} 
           totalPages={totalPages} 
@@ -140,52 +178,49 @@ export default function AuditLogsPage() {
             setPage(1);
           }}
           itemName="logs"
-          className="justify-end"
+          className="justify-end border-t-0 mt-0 py-0"
         />
       </div>
 
-      {/* View Audit Log Modal */}
+      {/* Log Detail Modal */}
       <Modal
-        title="Audit Log Details"
-        description="View detailed information about this system event."
+        title="Audit Log Detail"
+        description="Detailed view of the specific system event."
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
       >
         {selectedLog && (
-          <div className="space-y-6">
+          <div className="space-y-6 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Action</p>
-                <p className="text-base font-semibold text-blue-600">{selectedLog.action}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Action</p>
+                <p className="font-semibold">{selectedLog.action}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">User</p>
-                <p className="text-base">{selectedLog.userId?.email || selectedLog.userId}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Resource</p>
+                <p className="font-semibold">{selectedLog.resource}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Resource</p>
-                <p className="text-base">{selectedLog.resource}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">User</p>
+                <p className="font-semibold">{selectedLog.userId?.name || 'System'}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Timestamp</p>
-                <p className="text-base">{new Date(selectedLog.createdAt).toLocaleString()}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Timestamp</p>
+                <p className="font-semibold">{new Date(selectedLog.createdAt).toLocaleString()}</p>
               </div>
-              <div className="space-y-1 col-span-2">
-                <p className="text-sm font-medium text-muted-foreground">Log ID</p>
-                <p className="text-xs font-mono bg-muted p-1 rounded">{selectedLog._id}</p>
-              </div>
-              <div className="space-y-1 col-span-2">
-                <p className="text-sm font-medium text-muted-foreground">Metadata</p>
-                <pre className="text-xs font-mono bg-muted p-4 rounded overflow-auto max-h-40">
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Event Metadata</p>
+              <div className="bg-muted p-4 rounded-xl overflow-auto max-h-75">
+                <pre className="text-xs font-mono">
                   {JSON.stringify(selectedLog.metadata, null, 2)}
                 </pre>
               </div>
             </div>
-            
-            <div className="flex justify-end pt-4 border-t">
-              <Button variant="default" onClick={() => setIsViewModalOpen(false)}>
-                Close
-              </Button>
+
+            <div className="flex justify-end pt-2">
+              <Button onClick={() => setIsViewModalOpen(false)}>Close</Button>
             </div>
           </div>
         )}

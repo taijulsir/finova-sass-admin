@@ -33,7 +33,7 @@ export default function DashboardPage() {
       const [dashboardRes, analyticsRes, logsRes] = await Promise.all([
         AdminService.getDashboard(),
         AdminService.getAnalytics(),
-        AdminService.getAuditLogs(1, 5)
+        AdminService.getAuditLogs({ page: 1, limit: 5 })
       ]);
       
       setStats(dashboardRes.data?.stats || dashboardRes.stats);

@@ -1,44 +1,41 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { AdminService } from '@/services/admin.service';
-import { Users as UserIcon, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { toast } from 'sonner';
 import { Pagination } from "@/components/ui-system/pagination";
-import { DataTable } from "@/components/ui-system/data-table";
+import { DataTable } from "@/components/ui-system/table/DataTable";
 import { PageHeader } from "@/components/ui-system/page-header";
 import { FilterSection } from "@/components/ui-system/filter-section";
 import { UserForm, UserFormValues } from "./components/user-form";
 import { UserView } from "./components/user-view";
 import { getUserColumns } from "./user-utils";
 import { useUserHandlers } from "./user-helpers";
+import { useFetchData } from "@/hooks/use-fetch-data";
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [activeTab, setActiveTab] = useState('active');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const response = await AdminService.getUsers(page, limit, search, activeTab === 'active');
-      setUsers(response.data || []);
-      setTotalPages(response.pagination?.totalPages || 1);
-      setTotalItems(response.pagination?.total || 0);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch users");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchParams = useMemo(() => ({
+    page,
+    limit,
+    search,
+    isActive: activeTab === 'active'
+  }), [page, limit, search, activeTab]);
+
+  const {
+    data: users,
+    loading,
+    totalItems,
+    totalPages,
+    refresh
+  } = useFetchData(AdminService.getUsers, fetchParams, [activeTab]);
 
   const {
     isAddModalOpen,
@@ -53,11 +50,7 @@ export default function UsersPage() {
     handleViewUser,
     handleArchiveUser,
     handleDeleteUser
-  } = useUserHandlers(fetchUsers);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [search, page, limit, activeTab]);
+  } = useUserHandlers(refresh);
 
   const handleFormSubmit = async (data: UserFormValues) => {
     setIsSubmitting(true);
@@ -71,7 +64,7 @@ export default function UsersPage() {
       }
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
-      fetchUsers(); 
+      refresh(); 
     } catch (error: any) {
       console.error(error);
       toast.error(error?.response?.data?.message || `Failed to ${isEditModalOpen ? 'update' : 'create'} user`);
@@ -88,43 +81,49 @@ export default function UsersPage() {
   }), [handleViewUser, handleOpenEditModal, handleArchiveUser, handleDeleteUser]);
 
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Users"
-        description="Manage system users, roles, and permissions."
-        action={{
-          label: "Add User",
-          icon: Plus,
-          onClick: handleOpenAddModal
-        }}
-      />
+    <div className="h-full flex flex-col space-y-4 overflow-hidden">
+      <div className="px-6 pt-6 shrink-0">
+        <PageHeader 
+          title="Users"
+          description="Manage system users, roles, and permissions."
+          action={{
+            label: "Add User",
+            icon: Plus,
+            onClick: handleOpenAddModal
+          }}
+        />
+      </div>
 
-      <FilterSection 
-        searchPlaceholder="Search users by name or email..."
-        searchValue={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setPage(1);
-        }}
-        activeTab={activeTab}
-        onTabChange={(val) => {
-          setActiveTab(val);
-          setPage(1);
-        }}
-        tabs={[
-          { label: "Active Users", value: "active" },
-          { label: "Archived", value: "archived" }
-        ]}
-      />
+      <div className="px-6 shrink-0">
+        <FilterSection 
+          searchPlaceholder="Search users by name or email..."
+          searchValue={search}
+          onSearchChange={(val) => {
+            setSearch(val);
+            setPage(1);
+          }}
+          activeTab={activeTab}
+          onTabChange={(val) => {
+            setActiveTab(val);
+            setPage(1);
+          }}
+          tabs={[
+            { label: "Active Users", value: "active" },
+            { label: "Archived", value: "archived" }
+          ]}
+        />
+      </div>
 
-      <DataTable 
-        columns={columns as any} 
-        data={users} 
-        loading={loading}
-        onRowClick={handleViewUser}
-      />
+      <div className="flex-1 overflow-hidden px-6">
+        <DataTable 
+          columns={columns as any} 
+          data={users} 
+          loading={loading}
+          onRowClick={handleViewUser}
+        />
+      </div>
 
-      <div className="pt-4">
+      <div className="px-6 pb-6 pt-2 border-t mt-auto shrink-0 bg-background/80 backdrop-blur-sm z-20">
         <Pagination 
           currentPage={page} 
           totalPages={totalPages} 
@@ -136,7 +135,7 @@ export default function UsersPage() {
             setPage(1);
           }}
           itemName="users"
-          className="justify-end"
+          
         />
       </div>
 
