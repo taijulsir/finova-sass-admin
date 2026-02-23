@@ -2,23 +2,17 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { AdminService } from '@/services/admin.service';
-import { CreditCard, Search, MoreHorizontal } from 'lucide-react';
-import { TbEdit, TbArchive } from 'react-icons/tb';
-import { Button } from '@/components/ui/button';
+import { CreditCard, Plus } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ArchiveModal } from "@/components/ui-system/archive-modal";
 import { Pagination } from "@/components/ui-system/pagination";
-import { FilterTabs } from "@/components/ui-system/filter-tabs";
 import { DataTable } from "@/components/ui-system/data-table";
+import { PageHeader } from "@/components/ui-system/page-header";
+import { FilterSection } from "@/components/ui-system/filter-section";
 import { SubscriptionForm, SubscriptionFormValues } from "./components/subscription-form";
+import { SubscriptionView } from "./components/subscription-view";
+import { getSubscriptionColumns } from "./subscription-utils";
+import { useSubscriptionHandlers } from "./subscription-helpers";
 
 export default function SubscriptionsPage() {
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -29,17 +23,7 @@ export default function SubscriptionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [activeTab, setActiveTab] = useState('active');
-
-  // Modal state
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
-  const [selectedSub, setSelectedSub] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    fetchSubscriptions();
-  }, [search, page, limit, activeTab]);
 
   const fetchSubscriptions = async () => {
     try {
@@ -55,6 +39,22 @@ export default function SubscriptionsPage() {
       setLoading(false);
     }
   };
+
+  const {
+    isViewModalOpen,
+    setIsViewModalOpen,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    selectedSub,
+    handleViewSubscription,
+    handleEditSubscription,
+    handleArchiveSubscription,
+    handleManageSubscription
+  } = useSubscriptionHandlers(fetchSubscriptions);
+
+  useEffect(() => {
+    fetchSubscriptions();
+  }, [search, page, limit, activeTab]);
 
   const handleUpdateSubscription = async (data: SubscriptionFormValues) => {
     if (!selectedSub) return;
@@ -73,178 +73,50 @@ export default function SubscriptionsPage() {
     }
   };
 
-  const handleViewSubscription = (org: any) => {
-    setSelectedSub(org);
-    setIsViewModalOpen(true);
-  };
-
-  const handleEditSubscription = (e: React.MouseEvent, org: any) => {
-    e.stopPropagation();
-    setSelectedSub(org);
-    setIsEditModalOpen(true);
-  };
-
-  const handleArchiveSubscription = (e: React.MouseEvent, org: any) => {
-    e.stopPropagation();
-    setSelectedSub(org);
-    setIsArchiveModalOpen(true);
-  };
-
-  const confirmArchive = async () => {
-    if (!selectedSub) return;
-    try {
-      await AdminService.archiveOrganization(selectedSub._id);
-      toast.success("Organization and subscription archived");
-      fetchSubscriptions();
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to archive subscription");
-    }
-  };
-
-  const columns = useMemo(() => [
-    {
-      header: "Organization",
-      accessorKey: "name" as const,
-      className: "font-medium",
-    },
-    {
-      header: "Plan",
-      cell: (org: any) => <span className="capitalize">{org.plan}</span>,
-    },
-    {
-      header: "Status",
-      cell: (org: any) => (
-        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-          org.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-        }`}>
-          {org.status}
-        </span>
-      ),
-    },
-    {
-      header: "Billing Cycle",
-      cell: () => "Monthly",
-    },
-    {
-      header: "Amount",
-      cell: (org: any) => <span>{org.plan === 'enterprise' ? '$299' : org.plan === 'pro' ? '$49' : '$0'}</span>,
-    },
-    {
-      header: "Actions",
-      className: "text-right",
-      cell: (org: any) => (
-        <div className="flex items-center justify-end space-x-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
-            onClick={(e) => handleEditSubscription(e, org)}
-            title="Edit"
-          >
-            <TbEdit className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 text-amber-600 hover:text-amber-800 hover:bg-amber-100"
-            onClick={(e) => handleArchiveSubscription(e, org)}
-            title="Archive"
-          >
-            <TbArchive className="h-4 w-4" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewSubscription(org); }}>
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); /* Add more actions */ }}>
-                Cancel Subscription
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
-    },
-  ], []);
+  const columns = useMemo(() => getSubscriptionColumns({
+    onView: handleViewSubscription,
+    onEdit: (sub) => handleEditSubscription(sub),
+    onArchive: (sub) => handleArchiveSubscription(sub),
+    onManage: (sub) => handleManageSubscription(sub),
+  }), [handleViewSubscription, handleEditSubscription, handleArchiveSubscription, handleManageSubscription]);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
-          <p className="text-muted-foreground">Manage active subscriptions and recurring revenue.</p>
-        </div>
+      <PageHeader 
+        title="Subscriptions"
+        description="Monitor and manage all organization subscriptions and billing plans."
+        action={{
+          label: "Create Custom Plan",
+          icon: Plus,
+          onClick: () => toast.info("Custom plan creation would go here (Mock)")
+        }}
+      />
 
-        {/* Edit Modal */}
-        <Modal
-          title="Edit Subscription"
-          description="Update organization subscription plan."
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-        >
-          <SubscriptionForm
-            isEdit={true}
-            isSubmitting={isSubmitting}
-            orgName={selectedSub?.name}
-            defaultValues={selectedSub ? {
-              plan: selectedSub.plan,
-              status: selectedSub.status
-            } : undefined}
-            onSubmit={handleUpdateSubscription}
-            onCancel={() => setIsEditModalOpen(false)}
-          />
-        </Modal>
-
-        {/* Archive Modal */}
-        <ArchiveModal
-          isOpen={isArchiveModalOpen}
-          onClose={() => setIsArchiveModalOpen(false)}
-          onConfirm={confirmArchive}
-          title="Archive Subscription"
-          description={`Are you sure you want to archive the subscription for ${selectedSub?.name}?`}
-        />
-      </div>
-
-      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-        <FilterTabs 
-          activeTab={activeTab} 
-          onTabChange={(val) => {
-            setActiveTab(val);
-            setPage(1);
-          }} 
-        />
-        
-        <div className="flex items-center space-x-2">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search subscriptions..."
-              className="pl-9"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-            />
-          </div>
-        </div>
-      </div>
+      <FilterSection 
+        searchPlaceholder="Search by organization or email..."
+        searchValue={search}
+        onSearchChange={(val) => {
+          setSearch(val);
+          setPage(1);
+        }}
+        activeTab={activeTab}
+        onTabChange={(val) => {
+          setActiveTab(val);
+          setPage(1);
+        }}
+        tabs={[
+          { label: "Active", value: "active" },
+          { label: "Cancelled", value: "archived" }
+        ]}
+      />
 
       <DataTable 
-        columns={columns} 
+        columns={columns as any} 
         data={organizations} 
         loading={loading}
         onRowClick={handleViewSubscription}
-        emptyMessage="No subscriptions found."
       />
 
-      {/* Pagination */}
       <div className="pt-4">
         <Pagination 
           currentPage={page} 
@@ -261,68 +133,31 @@ export default function SubscriptionsPage() {
         />
       </div>
 
-      {/* View Subscription Modal */}
+      {/* Edit/Change Plan Modal */}
       <Modal
-        title="Subscription Details"
-        description="View detailed information about this subscription."
+        title="Change Subscription Plan"
+        description={`Modify the subscription for ${selectedSub?.name}.`}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+      >
+        <SubscriptionForm
+          isSubmitting={isSubmitting}
+          defaultValues={selectedSub ? {
+            plan: selectedSub.plan
+          } : undefined}
+          onSubmit={handleUpdateSubscription}
+          onCancel={() => setIsEditModalOpen(false)}
+        />
+      </Modal>
+
+      {/* Details View Modal */}
+      <SubscriptionView 
+        subscription={selectedSub}
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
-      >
-        {selectedSub && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Organization</p>
-                <p className="text-base font-semibold">{selectedSub.name}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Status</p>
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                  selectedSub.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {selectedSub.status}
-                </span>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Plan</p>
-                <p className="text-base capitalize">{selectedSub.plan}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Amount</p>
-                <p className="text-base">{selectedSub.plan === 'enterprise' ? '$299' : '$49'}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Billing Cycle</p>
-                <p className="text-base">Monthly</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Next Payment</p>
-                <p className="text-base">2024-03-01</p>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-2 pt-4 border-t">
-              <Button 
-                variant="outline" 
-                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
-                onClick={(e) => handleEditSubscription(e, selectedSub)}
-              >
-                <TbEdit className="mr-2 h-4 w-4" /> Edit
-              </Button>
-              <Button 
-                variant="outline" 
-                className="text-amber-600 hover:text-amber-800 hover:bg-amber-50 border-amber-200"
-                onClick={(e) => handleArchiveSubscription(e, selectedSub)}
-              >
-                <TbArchive className="mr-2 h-4 w-4" /> Archive
-              </Button>
-              <Button variant="default" onClick={() => setIsViewModalOpen(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+        onEdit={handleEditSubscription}
+        onArchive={handleArchiveSubscription}
+      />
     </div>
   );
 }
