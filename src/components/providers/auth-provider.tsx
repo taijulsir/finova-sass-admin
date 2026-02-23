@@ -3,21 +3,18 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '../../lib/store';
 import api from '../../lib/api';
+import { Loader2 } from "lucide-react";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  // We need to fetch current user profile
-  // The 'setToken' here is actually handled by interceptor if refresh token is used.
-  // But if page reloads, we need to try refresh token explicitly because we don't have access token in memory yet.
-  const { setUser, setToken, logout, isAuthenticated, isLoading } = useAuthStore();
+  const { setUser, logout, isAuthenticated, isLoading } = useAuthStore();
   
   useEffect(() => {
     const checkAuth = async () => {
       const token = useAuthStore.getState().token;
-      const refreshToken = useAuthStore.getState().refreshToken;
       
-      if (!token && !refreshToken) {
+      if (!token) {
         useAuthStore.setState({ isAuthenticated: false, isLoading: false });
         return;
       }
@@ -39,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     checkAuth();
-  }, []);
+  }, [setUser, logout]);
 
   useEffect(() => {
     const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
@@ -53,8 +50,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading, isAuthenticated, pathname, router]);
 
-  if (isLoading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  // Only show the global centered loader if we don't even have a persisted session hint
+  const token = useAuthStore.getState().token;
+  if (isLoading && !token) {
+    return (
+      <div className="flex flex-col h-screen w-full items-center justify-center bg-background animate-in fade-in duration-500">
+        <Loader2 className="h-10 w-10 animate-spin text-primary opacity-80" />
+        <p className="mt-4 text-sm font-medium text-muted-foreground animate-pulse">
+          Initializing session...
+        </p>
+      </div>
+    );
   }
 
   return <>{children}</>;
