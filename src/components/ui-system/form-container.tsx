@@ -1,19 +1,19 @@
 import { useForm, UseFormReturn, FieldValues, DefaultValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z, ZodType } from "zod";
-import { useEffect } from "react";
-import { Form } from "@/components/ui/form";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
+import { Loader2 } from "lucide-react";
 
 interface FormContainerProps<T extends FieldValues> {
-  schema: ZodType<T>;
+  schema: z.ZodType<T, any, any>;
   defaultValues?: DefaultValues<T>;
-  onSubmit: (data: T) => Promise<void> | void;
+  onSubmit: (data: T) => void | Promise<void>;
+  onCancel?: () => void;
   children: (form: UseFormReturn<T>) => React.ReactNode;
   submitLabel?: string;
-  isSubmitting?: boolean;
-  onCancel?: () => void;
   cancelLabel?: string;
+  isSubmitting?: boolean;
   className?: string;
 }
 
@@ -21,24 +21,17 @@ export function FormContainer<T extends FieldValues>({
   schema,
   defaultValues,
   onSubmit,
+  onCancel,
   children,
   submitLabel = "Submit",
-  isSubmitting = false,
-  onCancel,
   cancelLabel = "Cancel",
+  isSubmitting = false,
   className = "space-y-4",
 }: FormContainerProps<T>) {
   const form = useForm<T>({
     resolver: zodResolver(schema),
     defaultValues,
   });
-
-  // Reset form when defaultValues changes (useful for edit modals)
-  useEffect(() => {
-    if (defaultValues) {
-      form.reset(defaultValues);
-    }
-  }, [defaultValues, form]);
 
   return (
     <Form {...form}>
@@ -56,7 +49,8 @@ export function FormContainer<T extends FieldValues>({
             </Button>
           )}
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : submitLabel}
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {submitLabel}
           </Button>
         </div>
       </form>
