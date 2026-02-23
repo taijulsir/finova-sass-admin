@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { AdminService } from '@/services/admin.service';
-import { CreditCard, Search, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { CreditCard, Search, MoreHorizontal } from 'lucide-react';
 import { TbEdit, TbArchive } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Modal } from '@/components/ui/modal';
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -18,6 +17,8 @@ import {
 import { ArchiveModal } from "@/components/ui-system/archive-modal";
 import { Pagination } from "@/components/ui-system/pagination";
 import { FilterTabs } from "@/components/ui-system/filter-tabs";
+import { DataTable } from "@/components/ui-system/data-table";
+import { SubscriptionForm, SubscriptionFormValues } from "./components/subscription-form";
 
 export default function SubscriptionsPage() {
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -32,7 +33,6 @@ export default function SubscriptionsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [selectedSub, setSelectedSub] = useState<any>(null);
-  const [editSubData, setEditSubData] = useState<any>({ plan: '', status: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -47,18 +47,18 @@ export default function SubscriptionsPage() {
       setTotalPages(response.data?.pagination?.totalPages || 1);
     } catch (error) {
       console.error(error);
+      toast.error("Failed to fetch subscriptions");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateSubscription = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateSubscription = async (data: SubscriptionFormValues) => {
     if (!selectedSub) return;
     
     setIsSubmitting(true);
     try {
-      await AdminService.updateOrganization(selectedSub._id, { plan: editSubData.plan });
+      await AdminService.updateOrganization(selectedSub._id, { plan: data.plan });
       toast.success("Subscription updated successfully");
       setIsEditModalOpen(false);
       fetchSubscriptions(); 
@@ -78,10 +78,6 @@ export default function SubscriptionsPage() {
   const handleEditSubscription = (e: React.MouseEvent, org: any) => {
     e.stopPropagation();
     setSelectedSub(org);
-    setEditSubData({
-      plan: org.plan,
-      status: org.status
-    });
     setIsEditModalOpen(true);
   };
 
@@ -93,10 +89,85 @@ export default function SubscriptionsPage() {
 
   const confirmArchive = async () => {
     if (!selectedSub) return;
-    await AdminService.archiveOrganization(selectedSub._id);
-    toast.success("Organization and subscription archived");
-    fetchSubscriptions();
+    try {
+      await AdminService.archiveOrganization(selectedSub._id);
+      toast.success("Organization and subscription archived");
+      fetchSubscriptions();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to archive subscription");
+    }
   };
+
+  const columns = useMemo(() => [
+    {
+      header: "Organization",
+      accessorKey: "name" as const,
+      className: "font-medium",
+    },
+    {
+      header: "Plan",
+      cell: (org: any) => <span className="capitalize">{org.plan}</span>,
+    },
+    {
+      header: "Status",
+      cell: (org: any) => (
+        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+          org.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+        }`}>
+          {org.status}
+        </span>
+      ),
+    },
+    {
+      header: "Billing Cycle",
+      cell: () => "Monthly",
+    },
+    {
+      header: "Amount",
+      cell: (org: any) => <span>{org.plan === 'enterprise' ? '$299' : org.plan === 'pro' ? '$49' : '$0'}</span>,
+    },
+    {
+      header: "Actions",
+      className: "text-right",
+      cell: (org: any) => (
+        <div className="flex items-center justify-end space-x-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+            onClick={(e) => handleEditSubscription(e, org)}
+            title="Edit"
+          >
+            <TbEdit className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-amber-600 hover:text-amber-800 hover:bg-amber-100"
+            onClick={(e) => handleArchiveSubscription(e, org)}
+            title="Archive"
+          >
+            <TbArchive className="h-4 w-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewSubscription(org); }}>
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); /* Add more actions */ }}>
+                Cancel Subscription
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ], []);
 
   return (
     <div className="space-y-6">
@@ -113,37 +184,17 @@ export default function SubscriptionsPage() {
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
         >
-          <form onSubmit={handleUpdateSubscription}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Organization</Label>
-                <div className="p-2 border rounded bg-muted/50 font-medium">
-                  {selectedSub?.name}
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-plan">Plan</Label>
-                <select 
-                  id="edit-plan"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={editSubData.plan}
-                  onChange={(e) => setEditSubData({...editSubData, plan: e.target.value})}
-                >
-                  <option value="free">Free</option>
-                  <option value="pro">Pro</option>
-                  <option value="enterprise">Enterprise</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Updating..." : "Update"}
-              </Button>
-            </div>
-          </form>
+          <SubscriptionForm
+            isEdit={true}
+            isSubmitting={isSubmitting}
+            orgName={selectedSub?.name}
+            defaultValues={selectedSub ? {
+              plan: selectedSub.plan,
+              status: selectedSub.status
+            } : undefined}
+            onSubmit={handleUpdateSubscription}
+            onCancel={() => setIsEditModalOpen(false)}
+          />
         </Modal>
 
         {/* Archive Modal */}
@@ -168,10 +219,10 @@ export default function SubscriptionsPage() {
         <div className="flex items-center space-x-2">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <input
+            <Input
               type="text"
               placeholder="Search subscriptions..."
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-9"
+              className="pl-9"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -182,116 +233,23 @@ export default function SubscriptionsPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="space-y-4">
-          <div className="rounded-md border">
-            <div className="h-10 bg-muted/50 border-b"></div>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center space-x-4 p-4 border-b">
-                <Skeleton className="h-4 w-1/4" />
-                <Skeleton className="h-4 w-1/6" />
-                <Skeleton className="h-4 w-1/6" />
-                <Skeleton className="h-4 w-1/6" />
-                <Skeleton className="h-4 w-1/6" />
-                <Skeleton className="h-8 w-8 rounded-full ml-auto" />
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="rounded-md border">
-            <table className="w-full text-sm text-left">
-              <thead className="text-muted-foreground bg-muted/50 font-medium">
-                <tr>
-                  <th className="p-4">Organization</th>
-                  <th className="p-4">Plan</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Billing Cycle</th>
-                  <th className="p-4">Next Payment</th>
-                  <th className="p-4 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {organizations?.map((org) => ( // Assuming org has subscription details included or just plan
-                  <tr 
-                    key={org._id} 
-                    className="border-t hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => handleViewSubscription(org)}
-                  >
-                    <td className="p-4 font-medium">{org.name}</td>
-                    <td className="p-4 capitalize">{org.plan}</td>
-                    <td className="p-4">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        org.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {org.status}
-                      </span>
-                    </td>
-                    <td className="p-4">{'Monthly'}</td>
-                    <td className="p-4">{'2024-03-01'}</td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <span className="mr-4">{org.plan === 'enterprise' ? '$299' : '$49'}</span>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
-                          onClick={(e) => handleEditSubscription(e, org)}
-                          title="Edit"
-                        >
-                          <TbEdit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-amber-600 hover:text-amber-800 hover:bg-amber-100"
-                          onClick={(e) => handleArchiveSubscription(e, org)}
-                          title="Archive"
-                        >
-                          <TbArchive className="h-4 w-4" />
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewSubscription(org); }}>
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); /* Add more actions */ }}>
-                              Cancel Subscription
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {organizations?.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                      No subscriptions found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Pagination */}
-          <div className="pt-4">
-            <Pagination 
-              currentPage={page} 
-              totalPages={totalPages} 
-              onPageChange={setPage} 
-              className="justify-end"
-            />
-          </div>
-        </div>
-      )}
+      <DataTable 
+        columns={columns} 
+        data={organizations} 
+        loading={loading}
+        onRowClick={handleViewSubscription}
+        emptyMessage="No subscriptions found."
+      />
+
+      {/* Pagination */}
+      <div className="pt-4">
+        <Pagination 
+          currentPage={page} 
+          totalPages={totalPages} 
+          onPageChange={setPage} 
+          className="justify-end"
+        />
+      </div>
 
       {/* View Subscription Modal */}
       <Modal

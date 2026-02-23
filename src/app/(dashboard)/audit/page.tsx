@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { AdminService } from '@/services/admin.service';
-import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { Search, MoreHorizontal } from 'lucide-react';
 import { TbEye } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Modal } from '@/components/ui/modal';
 import {
   DropdownMenu,
@@ -14,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/ui-system/pagination";
+import { DataTable } from "@/components/ui-system/data-table";
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -33,8 +33,8 @@ export default function AuditLogsPage() {
     try {
       setLoading(true);
       const response = await AdminService.getAuditLogs(page, 10);
-      setLogs(response.data?.data || response.data || []);
-      setTotalPages(response.data?.pagination?.totalPages || 1);
+      setLogs(response.data || []);
+      setTotalPages(response.pagination?.totalPages || 1);
     } catch (error) {
       console.error(error);
     } finally {
@@ -47,6 +47,66 @@ export default function AuditLogsPage() {
     setIsViewModalOpen(true);
   };
 
+  const columns = useMemo(() => [
+    {
+      header: "Action",
+      cell: (log: any) => <span className="font-medium text-blue-600">{log.action}</span>,
+    },
+    {
+      header: "User",
+      cell: (log: any) => <span>{log.userId?.email || log.userId}</span>,
+    },
+    {
+      header: "Resource",
+      accessorKey: "resource" as const,
+    },
+    {
+      header: "Details",
+      cell: (log: any) => (
+        <span className="text-xs font-mono text-muted-foreground max-w-xs truncate block">
+          {JSON.stringify(log.metadata)}
+        </span>
+      ),
+    },
+    {
+      header: "Timestamp",
+      cell: (log: any) => (
+        <span className="text-muted-foreground">
+          {new Date(log.createdAt).toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      header: "Actions",
+      className: "text-right",
+      cell: (log: any) => (
+        <div className="flex items-center justify-end space-x-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+            onClick={(e) => { e.stopPropagation(); handleViewLog(log); }}
+            title="View Details"
+          >
+            <TbEye className="h-4 w-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewLog(log); }}>
+                View Full Details
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ], []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -56,100 +116,23 @@ export default function AuditLogsPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="space-y-4">
-          <div className="rounded-md border">
-            <div className="h-10 bg-muted/50 border-b"></div>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center space-x-4 p-4 border-b">
-                <Skeleton className="h-4 w-1/6" />
-                <Skeleton className="h-4 w-1/4" />
-                <Skeleton className="h-4 w-1/6" />
-                <Skeleton className="h-4 w-1/4" />
-                <Skeleton className="h-8 w-8 rounded-full ml-auto" />
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="rounded-md border">
-            <table className="w-full text-sm text-left">
-              <thead className="text-muted-foreground bg-muted/50 font-medium">
-                <tr>
-                  <th className="p-4">Action</th>
-                  <th className="p-4">User</th>
-                  <th className="p-4">Resource</th>
-                  <th className="p-4">Details</th>
-                  <th className="p-4">Timestamp</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs?.map((log) => (
-                  <tr 
-                    key={log._id} 
-                    className="border-t hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => handleViewLog(log)}
-                  >
-                    <td className="p-4 font-medium text-blue-600">{log.action}</td>
-                    <td className="p-4">{log.userId?.email || log.userId}</td>
-                    <td className="p-4">{log.resource}</td>
-                    <td className="p-4 text-xs font-mono text-muted-foreground max-w-xs truncate">
-                      {JSON.stringify(log.metadata)}
-                    </td>
-                    <td className="p-4 text-muted-foreground">
-                      {new Date(log.createdAt).toLocaleString()}
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
-                          onClick={(e) => { e.stopPropagation(); handleViewLog(log); }}
-                          title="View Details"
-                        >
-                          <TbEye className="h-4 w-4" />
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewLog(log); }}>
-                              View Full Details
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {logs?.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                      No audit logs found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Pagination */}
-          <div className="pt-4">
-            <Pagination 
-              currentPage={page} 
-              totalPages={totalPages} 
-              onPageChange={setPage} 
-              className="justify-end"
-            />
-          </div>
-        </div>
-      )}
+      <DataTable 
+        columns={columns} 
+        data={logs} 
+        loading={loading}
+        onRowClick={handleViewLog}
+        emptyMessage="No audit logs found."
+      />
+
+      {/* Pagination */}
+      <div className="pt-4">
+        <Pagination 
+          currentPage={page} 
+          totalPages={totalPages} 
+          onPageChange={setPage} 
+          className="justify-end"
+        />
+      </div>
 
       {/* View Audit Log Modal */}
       <Modal

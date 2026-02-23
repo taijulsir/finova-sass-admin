@@ -17,7 +17,7 @@ export default function AnalyticsPage() {
     try {
       setLoading(true);
       const response = await AdminService.getAnalytics();
-      setData(response.data || response);
+      setData(response.data || {});
     } catch (error) {
       console.error(error);
     } finally {
