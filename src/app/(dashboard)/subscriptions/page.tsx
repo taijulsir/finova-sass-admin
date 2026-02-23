@@ -7,13 +7,17 @@ import { TbEdit, TbArchive } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Modal } from '@/components/ui/modal';
-import { toast } from 'sonner';
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ArchiveModal } from "@/components/ui-system/archive-modal";
+import { Pagination } from "@/components/ui-system/pagination";
+import { FilterTabs } from "@/components/ui-system/filter-tabs";
 
 export default function SubscriptionsPage() {
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -21,25 +25,48 @@ export default function SubscriptionsPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState('active');
 
   // Modal state
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [selectedSub, setSelectedSub] = useState<any>(null);
+  const [editSubData, setEditSubData] = useState<any>({ plan: '', status: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchSubscriptions();
-  }, [search, page]);
+  }, [search, page, activeTab]);
 
   const fetchSubscriptions = async () => {
     try {
       setLoading(true);
-      const response = await AdminService.getOrganizations(page, 10, search);
+      const response = await AdminService.getOrganizations(page, 10, search, activeTab === 'active');
       setOrganizations(response.data?.data || response.data || []);
       setTotalPages(response.data?.pagination?.totalPages || 1);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateSubscription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSub) return;
+    
+    setIsSubmitting(true);
+    try {
+      await AdminService.updateOrganization(selectedSub._id, { plan: editSubData.plan });
+      toast.success("Subscription updated successfully");
+      setIsEditModalOpen(false);
+      fetchSubscriptions(); 
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.response?.data?.message || "Failed to update subscription");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -50,15 +77,25 @@ export default function SubscriptionsPage() {
 
   const handleEditSubscription = (e: React.MouseEvent, org: any) => {
     e.stopPropagation();
-    toast.info(`Edit subscription for: ${org.name}`);
+    setSelectedSub(org);
+    setEditSubData({
+      plan: org.plan,
+      status: org.status
+    });
+    setIsEditModalOpen(true);
   };
 
   const handleArchiveSubscription = (e: React.MouseEvent, org: any) => {
     e.stopPropagation();
-    toast.info(`Archive subscription for: ${org.name}`);
-    if (isViewModalOpen) {
-      setIsViewModalOpen(false);
-    }
+    setSelectedSub(org);
+    setIsArchiveModalOpen(true);
+  };
+
+  const confirmArchive = async () => {
+    if (!selectedSub) return;
+    await AdminService.archiveOrganization(selectedSub._id);
+    toast.success("Organization and subscription archived");
+    fetchSubscriptions();
   };
 
   return (
@@ -68,21 +105,80 @@ export default function SubscriptionsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
           <p className="text-muted-foreground">Manage active subscriptions and recurring revenue.</p>
         </div>
+
+        {/* Edit Modal */}
+        <Modal
+          title="Edit Subscription"
+          description="Update organization subscription plan."
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+        >
+          <form onSubmit={handleUpdateSubscription}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label>Organization</Label>
+                <div className="p-2 border rounded bg-muted/50 font-medium">
+                  {selectedSub?.name}
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-plan">Plan</Label>
+                <select 
+                  id="edit-plan"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={editSubData.plan}
+                  onChange={(e) => setEditSubData({...editSubData, plan: e.target.value})}
+                >
+                  <option value="free">Free</option>
+                  <option value="pro">Pro</option>
+                  <option value="enterprise">Enterprise</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Updating..." : "Update"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* Archive Modal */}
+        <ArchiveModal
+          isOpen={isArchiveModalOpen}
+          onClose={() => setIsArchiveModalOpen(false)}
+          onConfirm={confirmArchive}
+          title="Archive Subscription"
+          description={`Are you sure you want to archive the subscription for ${selectedSub?.name}?`}
+        />
       </div>
 
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search subscriptions..."
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-9"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
+      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+        <FilterTabs 
+          activeTab={activeTab} 
+          onTabChange={(val) => {
+            setActiveTab(val);
+            setPage(1);
+          }} 
+        />
+        
+        <div className="flex items-center space-x-2">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search subscriptions..."
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-9"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -186,31 +282,14 @@ export default function SubscriptionsPage() {
           </div>
           
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-end space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="pt-4">
+            <Pagination 
+              currentPage={page} 
+              totalPages={totalPages} 
+              onPageChange={setPage} 
+              className="justify-end"
+            />
+          </div>
         </div>
       )}
 

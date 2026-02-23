@@ -16,6 +16,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ArchiveModal } from "@/components/ui-system/archive-modal";
+import { Pagination } from "@/components/ui-system/pagination";
+import { FilterTabs } from "@/components/ui-system/filter-tabs";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -23,23 +26,27 @@ export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState('active');
 
   // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserName, setNewUserName] = useState('');
+  const [editUserData, setEditUserData] = useState<any>({ name: '', email: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchUsers();
-  }, [search, page]);
+  }, [search, page, activeTab]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await AdminService.getUsers(page, 10, search);
+      const response = await AdminService.getUsers(page, 10, search, activeTab === 'active');
       setUsers(response.data?.data || response.data || []);
       setTotalPages(response.data?.pagination?.totalPages || 1);
     } catch (error) {
@@ -70,6 +77,24 @@ export default function UsersPage() {
     }
   };
 
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    
+    setIsSubmitting(true);
+    try {
+      await AdminService.updateUser(selectedUser._id, editUserData);
+      toast.success("User updated successfully");
+      setIsEditModalOpen(false);
+      fetchUsers(); 
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.response?.data?.message || "Failed to update user");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleViewUser = (user: any) => {
     setSelectedUser(user);
     setIsViewModalOpen(true);
@@ -77,17 +102,24 @@ export default function UsersPage() {
 
   const handleEditUser = (e: React.MouseEvent, user: any) => {
     e.stopPropagation();
-    // Implement edit logic here
-    toast.info(`Edit user: ${user.name}`);
+    setSelectedUser(user);
+    setEditUserData({
+      name: user.name,
+      email: user.email
+    });
+    setIsEditModalOpen(true);
   };
 
   const handleArchiveUser = (e: React.MouseEvent, user: any) => {
     e.stopPropagation();
-    // Implement archive logic here
-    toast.info(`Archive user: ${user.name}`);
-    if (isViewModalOpen) {
-      setIsViewModalOpen(false);
-    }
+    setSelectedUser(user);
+    setIsArchiveModalOpen(true);
+  };
+
+  const confirmArchive = async () => {
+    if (!selectedUser) return;
+    await AdminService.archiveUser(selectedUser._id);
+    fetchUsers();
   };
 
   return (
@@ -102,6 +134,7 @@ export default function UsersPage() {
           <Plus className="mr-2 h-4 w-4" /> Add User
         </Button>
         
+        {/* Add Modal */}
         <Modal
           title="Add User"
           description="Create a new user account."
@@ -142,21 +175,81 @@ export default function UsersPage() {
             </div>
           </form>
         </Modal>
+
+        {/* Edit Modal */}
+        <Modal
+          title="Edit User"
+          description="Update user account information."
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+        >
+          <form onSubmit={handleUpdateUser}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-name">Full Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editUserData.name}
+                  onChange={(e) => setEditUserData({...editUserData, name: e.target.value})}
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-email">Email Address</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editUserData.email}
+                  disabled
+                />
+                <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Updating..." : "Update"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* Archive Modal */}
+        <ArchiveModal
+          isOpen={isArchiveModalOpen}
+          onClose={() => setIsArchiveModalOpen(false)}
+          onConfirm={confirmArchive}
+          title="Archive User"
+          description={`Are you sure you want to archive ${selectedUser?.name}?`}
+        />
       </div>
 
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search users..."
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-9"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
+      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+        <FilterTabs 
+          activeTab={activeTab} 
+          onTabChange={(val) => {
+            setActiveTab(val);
+            setPage(1);
+          }} 
+        />
+        
+        <div className="flex items-center space-x-2">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search users..."
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-9"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -249,31 +342,14 @@ export default function UsersPage() {
           </div>
           
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-end space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="pt-4">
+            <Pagination 
+              currentPage={page} 
+              totalPages={totalPages} 
+              onPageChange={setPage} 
+              className="justify-end"
+            />
+          </div>
         </div>
       )}
 

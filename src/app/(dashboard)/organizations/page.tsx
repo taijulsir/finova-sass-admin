@@ -16,6 +16,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ArchiveModal } from "@/components/ui-system/archive-modal";
+import { Pagination } from "@/components/ui-system/pagination";
+import { FilterTabs } from "@/components/ui-system/filter-tabs";
 
 export default function OrganizationsPage() {
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -23,22 +26,26 @@ export default function OrganizationsPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState('active');
   
   // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [newOrgName, setNewOrgName] = useState('');
+  const [editOrgData, setEditOrgData] = useState<any>({ name: '', status: '', plan: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchOrganizations();
-  }, [search, page]);
+  }, [search, page, activeTab]);
 
   const fetchOrganizations = async () => {
     try {
       setLoading(true);
-      const response = await AdminService.getOrganizations(page, 10, search);
+      const response = await AdminService.getOrganizations(page, 10, search, activeTab === 'active');
       setOrganizations(response.data?.data || response.data || []);
       setTotalPages(response.data?.pagination?.totalPages || 1);
     } catch (error) {
@@ -68,6 +75,24 @@ export default function OrganizationsPage() {
     }
   };
 
+  const handleUpdateOrganization = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrg) return;
+    
+    setIsSubmitting(true);
+    try {
+      await AdminService.updateOrganization(selectedOrg._id, editOrgData);
+      toast.success("Organization updated successfully");
+      setIsEditModalOpen(false);
+      fetchOrganizations(); 
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.response?.data?.message || "Failed to update organization");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleViewOrganization = (org: any) => {
     setSelectedOrg(org);
     setIsViewModalOpen(true);
@@ -75,17 +100,25 @@ export default function OrganizationsPage() {
 
   const handleEditOrganization = (e: React.MouseEvent, org: any) => {
     e.stopPropagation();
-    // Implement edit logic here
-    toast.info(`Edit organization: ${org.name}`);
+    setSelectedOrg(org);
+    setEditOrgData({
+      name: org.name,
+      status: org.status,
+      plan: org.plan
+    });
+    setIsEditModalOpen(true);
   };
 
   const handleArchiveOrganization = (e: React.MouseEvent, org: any) => {
     e.stopPropagation();
-    // Implement archive logic here
-    toast.info(`Archive organization: ${org.name}`);
-    if (isViewModalOpen) {
-      setIsViewModalOpen(false);
-    }
+    setSelectedOrg(org);
+    setIsArchiveModalOpen(true);
+  };
+
+  const confirmArchive = async () => {
+    if (!selectedOrg) return;
+    await AdminService.archiveOrganization(selectedOrg._id);
+    fetchOrganizations();
   };
 
   return (
@@ -100,6 +133,7 @@ export default function OrganizationsPage() {
           <Plus className="mr-2 h-4 w-4" /> Add Organization
         </Button>
         
+        {/* Add Modal */}
         <Modal
           title="Add Organization"
           description="Create a new organization workspace."
@@ -129,21 +163,96 @@ export default function OrganizationsPage() {
             </div>
           </form>
         </Modal>
+
+        {/* Edit Modal */}
+        <Modal
+          title="Edit Organization"
+          description="Update organization details."
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+        >
+          <form onSubmit={handleUpdateOrganization}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-name">Organization Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editOrgData.name}
+                  onChange={(e) => setEditOrgData({...editOrgData, name: e.target.value})}
+                  placeholder="Acme Corp"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <select 
+                  id="edit-status"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={editOrgData.status}
+                  onChange={(e) => setEditOrgData({...editOrgData, status: e.target.value})}
+                >
+                  <option value="active">Active</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-plan">Plan</Label>
+                <select 
+                  id="edit-plan"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={editOrgData.plan}
+                  onChange={(e) => setEditOrgData({...editOrgData, plan: e.target.value})}
+                >
+                  <option value="free">Free</option>
+                  <option value="pro">Pro</option>
+                  <option value="enterprise">Enterprise</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Updating..." : "Update"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* Archive Modal */}
+        <ArchiveModal
+          isOpen={isArchiveModalOpen}
+          onClose={() => setIsArchiveModalOpen(false)}
+          onConfirm={confirmArchive}
+          title="Archive Organization"
+          description={`Are you sure you want to archive ${selectedOrg?.name}?`}
+        />
       </div>
 
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search organizations..."
-            className="pl-9"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1); // Reset to first page on search
-            }}
-          />
+      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+        <FilterTabs 
+          activeTab={activeTab} 
+          onTabChange={(val) => {
+            setActiveTab(val);
+            setPage(1);
+          }} 
+        />
+        
+        <div className="flex items-center space-x-2">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search organizations..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1); // Reset to first page on search
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -245,31 +354,14 @@ export default function OrganizationsPage() {
           </div>
           
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-end space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="pt-4">
+            <Pagination 
+              currentPage={page} 
+              totalPages={totalPages} 
+              onPageChange={setPage} 
+              className="justify-end"
+            />
+          </div>
         </div>
       )}
 

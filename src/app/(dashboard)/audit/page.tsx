@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Pagination } from "@/components/ui-system/pagination";
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -139,31 +140,14 @@ export default function AuditLogsPage() {
           </div>
           
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-end space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="pt-4">
+            <Pagination 
+              currentPage={page} 
+              totalPages={totalPages} 
+              onPageChange={setPage} 
+              className="justify-end"
+            />
+          </div>
         </div>
       )}
 
