@@ -11,6 +11,10 @@ export const AdminService = {
     });
     return data;
   },
+  createOrganization: async (orgData: any) => {
+    const { data } = await api.post('/organizations', orgData);
+    return data;
+  },
   getOrganizationDetails: async (id: string) => {
     const { data } = await api.get(`/admin/organizations/${id}`);
     return data;
