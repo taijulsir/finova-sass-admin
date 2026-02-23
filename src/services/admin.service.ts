@@ -35,7 +35,7 @@ export const AdminService = {
     const { data } = await api.post('/admin/users', userData);
     return data;
   },
-  getAuditLogs: async (params: any = { page: 1, limit: 10 }) => {
+  getAuditLogs: async (params: any = { page: 1, limit: 10, search: '', action: '' }) => {
     const { data } = await api.get('/admin/audit-logs', {
       params,
     });

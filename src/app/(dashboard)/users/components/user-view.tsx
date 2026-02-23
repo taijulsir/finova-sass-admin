@@ -85,9 +85,7 @@ export function UserView({
           >
             <TbArchive className="mr-2 h-4 w-4" /> Archive
           </Button>
-          <Button variant="secondary" onClick={onClose} className="sm:w-auto w-full">
-            Close
-          </Button>
+         
         </div>
       </div>
     </Modal>

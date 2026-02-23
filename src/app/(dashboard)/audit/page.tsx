@@ -2,134 +2,46 @@
 
 import { useState, useMemo } from 'react';
 import { AdminService } from '@/services/admin.service';
-import { FileText, MoreHorizontal } from 'lucide-react';
-import { TbEye } from 'react-icons/tb';
+import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/ui-system/pagination";
 import { DataTable } from "@/components/ui-system/table/DataTable";
 import { PageHeader } from "@/components/ui-system/page-header";
 import { FilterSection } from "@/components/ui-system/filter-section";
 import { useFetchData } from "@/hooks/use-fetch-data";
-import { Badge } from "@/components/ui/badge";
+import { getAuditColumns, auditActionOptions } from "./audit-utils";
+import { useAuditHandlers } from "./audit-helpers";
 
 export default function AuditLogsPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [activeTab, setActiveTab] = useState('all');
 
   const fetchParams = useMemo(() => ({
     page,
     limit,
     search,
-  }), [page, limit, search]);
+    action: activeTab === 'all' ? undefined : activeTab,
+  }), [page, limit, search, activeTab]);
 
   const {
     data: logs,
     loading,
     totalItems,
     totalPages,
-  } = useFetchData(AdminService.getAuditLogs, fetchParams);
+  } = useFetchData(AdminService.getAuditLogs, fetchParams, [activeTab]);
 
-  // Modal state
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<any>(null);
+  const {
+    selectedLog,
+    isViewModalOpen,
+    setIsViewModalOpen,
+    handleViewLog,
+    handleExportCSV
+  } = useAuditHandlers();
 
-  const handleViewLog = (log: any) => {
-    setSelectedLog(log);
-    setIsViewModalOpen(true);
-  };
-
-  const columns = useMemo(() => [
-    {
-      header: "Action",
-      cell: (log: any) => (
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 uppercase text-[10px] font-bold tracking-wider">
-          {log.action?.replace(/_/g, ' ')}
-        </Badge>
-      ),
-    },
-    {
-      header: "User",
-      cell: (log: any) => (
-        <div className="flex flex-col">
-          <span className="font-medium text-foreground">{log.userId?.name || 'System'}</span>
-          <span className="text-xs text-muted-foreground">{log.userId?.email || 'automated'}</span>
-        </div>
-      ),
-    },
-    {
-      header: "Resource",
-      cell: (log: any) => (
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="font-mono text-[10px]">
-            {log.resource}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      header: "Details",
-      className: "max-w-[400px]",
-      cell: (log: any) => (
-        <div className="max-h-15 overflow-y-auto scrollbar-none">
-          <span className="text-[10px] font-mono text-muted-foreground leading-tight block whitespace-pre-wrap">
-            {JSON.stringify(log.metadata, null, 1)}
-          </span>
-        </div>
-      ),
-    },
-    {
-      header: "Timestamp",
-      cell: (log: any) => (
-        <div className="flex flex-col text-xs">
-          <span className="text-foreground">{new Date(log.createdAt).toLocaleDateString()}</span>
-          <span className="text-muted-foreground">{new Date(log.createdAt).toLocaleTimeString()}</span>
-        </div>
-      ),
-    },
-    {
-      header: "Actions",
-      className: "text-right w-[80px]",
-      cell: (log: any) => (
-        <div className="flex items-center justify-end space-x-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
-            onClick={(e) => { e.stopPropagation(); handleViewLog(log); }}
-          >
-            <TbEye className="h-4 w-4" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleViewLog(log)}>
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => {
-                  navigator.clipboard.writeText(JSON.stringify(log, null, 2));
-                }}
-              >
-                Copy JSON
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
-    },
-  ], []);
+  const columns = useMemo(() => getAuditColumns(handleViewLog), [handleViewLog]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-background">
@@ -138,21 +50,27 @@ export default function AuditLogsPage() {
           title="Audit Logs"
           description="Track system activities and resource changes across the platform."
           action={{
-            label: "Export Logs",
+            label: "Export CSV",
             icon: FileText,
-            onClick: () => {}, // TODO: Implement CSV export
+            onClick: () => handleExportCSV(logs),
             variant: "outline"
           }}
         />
         
         <div className="mt-6">
           <FilterSection 
-            searchPlaceholder="Search logs by user, action or resource..."
+            searchPlaceholder="Search logs by resource..."
             searchValue={search}
             onSearchChange={(val) => {
               setSearch(val);
               setPage(1);
             }}
+            activeTab={activeTab}
+            onTabChange={(val) => {
+              setActiveTab(val);
+              setPage(1);
+            }}
+            tabs={auditActionOptions}
           />
         </div>
       </div>
@@ -162,6 +80,7 @@ export default function AuditLogsPage() {
           columns={columns as any} 
           data={logs} 
           loading={loading}
+          stickyHeader={true}
           onRowClick={handleViewLog}
         />
       </div>
