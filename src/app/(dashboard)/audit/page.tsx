@@ -12,6 +12,7 @@ import { FilterSection } from "@/components/ui-system/filter-section";
 import { useFetchData } from "@/hooks/use-fetch-data";
 import { getAuditColumns, auditActionOptions } from "./audit-utils";
 import { useAuditHandlers } from "./audit-helpers";
+import { AuditView } from "./components/audit-view";
 
 export default function AuditLogsPage() {
   const [search, setSearch] = useState('');
@@ -70,7 +71,7 @@ export default function AuditLogsPage() {
               setActiveTab(val);
               setPage(1);
             }}
-            tabs={auditActionOptions}
+            // tabs={auditActionOptions}
           />
         </div>
       </div>
@@ -97,7 +98,7 @@ export default function AuditLogsPage() {
             setPage(1);
           }}
           itemName="logs"
-          className="justify-end border-t-0 mt-0 py-0"
+          // className="justify-end border-t-0 mt-0 py-0"
         />
       </div>
 
@@ -108,41 +109,7 @@ export default function AuditLogsPage() {
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
       >
-        {selectedLog && (
-          <div className="space-y-6 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Action</p>
-                <p className="font-semibold">{selectedLog.action}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Resource</p>
-                <p className="font-semibold">{selectedLog.resource}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">User</p>
-                <p className="font-semibold">{selectedLog.userId?.name || 'System'}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Timestamp</p>
-                <p className="font-semibold">{new Date(selectedLog.createdAt).toLocaleString()}</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Event Metadata</p>
-              <div className="bg-muted p-4 rounded-xl overflow-auto max-h-75">
-                <pre className="text-xs font-mono">
-                  {JSON.stringify(selectedLog.metadata, null, 2)}
-                </pre>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button onClick={() => setIsViewModalOpen(false)}>Close</Button>
-            </div>
-          </div>
-        )}
+        <AuditView log={selectedLog} />
       </Modal>
     </div>
   );
