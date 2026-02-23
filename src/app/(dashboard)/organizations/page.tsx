@@ -2,12 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { AdminService } from '@/services/admin.service';
-import { Building2, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Building2, Plus, Search, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { TbEdit, TbArchive } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function OrganizationsPage() {
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -18,6 +26,8 @@ export default function OrganizationsPage() {
   
   // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [newOrgName, setNewOrgName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -55,6 +65,26 @@ export default function OrganizationsPage() {
       toast.error(error?.response?.data?.message || "Failed to create organization");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleViewOrganization = (org: any) => {
+    setSelectedOrg(org);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditOrganization = (e: React.MouseEvent, org: any) => {
+    e.stopPropagation();
+    // Implement edit logic here
+    toast.info(`Edit organization: ${org.name}`);
+  };
+
+  const handleArchiveOrganization = (e: React.MouseEvent, org: any) => {
+    e.stopPropagation();
+    // Implement archive logic here
+    toast.info(`Archive organization: ${org.name}`);
+    if (isViewModalOpen) {
+      setIsViewModalOpen(false);
     }
   };
 
@@ -118,8 +148,19 @@ export default function OrganizationsPage() {
       </div>
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <div className="space-y-4">
+          <div className="rounded-md border">
+            <div className="h-10 bg-muted/50 border-b"></div>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center space-x-4 p-4 border-b">
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-4 w-1/6" />
+                <Skeleton className="h-4 w-1/6" />
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-8 w-8 rounded-full ml-auto" />
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -137,7 +178,11 @@ export default function OrganizationsPage() {
               </thead>
               <tbody>
                 {organizations?.map((org) => (
-                  <tr key={org._id} className="border-t hover:bg-muted/50 transition-colors">
+                  <tr 
+                    key={org._id} 
+                    className="border-t hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => handleViewOrganization(org)}
+                  >
                     <td className="p-4 font-medium">{org.name}</td>
                     <td className="p-4">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -150,7 +195,41 @@ export default function OrganizationsPage() {
                     <td className="p-4">{org.ownerId?.email || 'N/A'}</td>
                     <td className="p-4">{new Date(org.createdAt).toLocaleDateString()}</td>
                     <td className="p-4 text-right">
-                      <button className="text-blue-600 hover:text-blue-800">Edit</button>
+                      <div className="flex items-center justify-end space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+                          onClick={(e) => handleEditOrganization(e, org)}
+                          title="Edit"
+                        >
+                          <TbEdit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-amber-600 hover:text-amber-800 hover:bg-amber-100"
+                          onClick={(e) => handleArchiveOrganization(e, org)}
+                          title="Archive"
+                        >
+                          <TbArchive className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewOrganization(org); }}>
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); /* Add more actions */ }}>
+                              Manage Billing
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -193,6 +272,69 @@ export default function OrganizationsPage() {
           )}
         </div>
       )}
+
+      {/* View Organization Modal */}
+      <Modal
+        title="Organization Details"
+        description="View detailed information about this organization."
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+      >
+        {selectedOrg && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Name</p>
+                <p className="text-base font-semibold">{selectedOrg.name}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Status</p>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  selectedOrg.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {selectedOrg.status}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Plan</p>
+                <p className="text-base capitalize">{selectedOrg.plan}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Owner Email</p>
+                <p className="text-base">{selectedOrg.ownerId?.email || 'N/A'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Created At</p>
+                <p className="text-base">{new Date(selectedOrg.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Organization ID</p>
+                <p className="text-xs font-mono bg-muted p-1 rounded">{selectedOrg._id}</p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4 border-t">
+              <Button 
+                variant="outline" 
+                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
+                onClick={(e) => handleEditOrganization(e, selectedOrg)}
+              >
+                <TbEdit className="mr-2 h-4 w-4" /> Edit
+              </Button>
+              <Button 
+                variant="outline" 
+                className="text-amber-600 hover:text-amber-800 hover:bg-amber-50 border-amber-200"
+                onClick={(e) => handleArchiveOrganization(e, selectedOrg)}
+              >
+                <TbArchive className="mr-2 h-4 w-4" /> Archive
+              </Button>
+              <Button variant="default" onClick={() => setIsViewModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

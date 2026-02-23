@@ -2,12 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { AdminService } from '@/services/admin.service';
-import { Users, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Users, Search, ChevronLeft, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
+import { TbEdit, TbArchive } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Modal } from '@/components/ui/modal';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -18,6 +26,8 @@ export default function UsersPage() {
 
   // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,6 +67,26 @@ export default function UsersPage() {
       toast.error(error?.response?.data?.message || "Failed to create user");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleViewUser = (user: any) => {
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditUser = (e: React.MouseEvent, user: any) => {
+    e.stopPropagation();
+    // Implement edit logic here
+    toast.info(`Edit user: ${user.name}`);
+  };
+
+  const handleArchiveUser = (e: React.MouseEvent, user: any) => {
+    e.stopPropagation();
+    // Implement archive logic here
+    toast.info(`Archive user: ${user.name}`);
+    if (isViewModalOpen) {
+      setIsViewModalOpen(false);
     }
   };
 
@@ -131,8 +161,18 @@ export default function UsersPage() {
       </div>
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <div className="space-y-4">
+          <div className="rounded-md border">
+            <div className="h-10 bg-muted/50 border-b"></div>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center space-x-4 p-4 border-b">
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-4 w-1/6" />
+                <Skeleton className="h-8 w-8 rounded-full ml-auto" />
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -149,13 +189,51 @@ export default function UsersPage() {
               </thead>
               <tbody>
                 {users?.map((user) => (
-                  <tr key={user._id} className="border-t hover:bg-muted/50 transition-colors">
+                  <tr 
+                    key={user._id} 
+                    className="border-t hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => handleViewUser(user)}
+                  >
                     <td className="p-4 font-medium">{user.name}</td>
                     <td className="p-4">{user.email}</td>
                     <td className="p-4 capitalize">{user.role}</td>
                     <td className="p-4">{new Date(user.createdAt).toLocaleDateString()}</td>
                     <td className="p-4 text-right">
-                      <button className="text-destructive hover:text-red-700">Delete</button>
+                      <div className="flex items-center justify-end space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+                          onClick={(e) => handleEditUser(e, user)}
+                          title="Edit"
+                        >
+                          <TbEdit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-amber-600 hover:text-amber-800 hover:bg-amber-100"
+                          onClick={(e) => handleArchiveUser(e, user)}
+                          title="Archive"
+                        >
+                          <TbArchive className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewUser(user); }}>
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); /* Add more actions */ }}>
+                              Reset Password
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -198,6 +276,61 @@ export default function UsersPage() {
           )}
         </div>
       )}
+
+      {/* View User Modal */}
+      <Modal
+        title="User Details"
+        description="View detailed information about this user."
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+      >
+        {selectedUser && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Name</p>
+                <p className="text-base font-semibold">{selectedUser.name}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Email</p>
+                <p className="text-base">{selectedUser.email}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Role</p>
+                <p className="text-base capitalize">{selectedUser.role}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Created At</p>
+                <p className="text-base">{new Date(selectedUser.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">User ID</p>
+                <p className="text-xs font-mono bg-muted p-1 rounded">{selectedUser._id}</p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4 border-t">
+              <Button 
+                variant="outline" 
+                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
+                onClick={(e) => handleEditUser(e, selectedUser)}
+              >
+                <TbEdit className="mr-2 h-4 w-4" /> Edit
+              </Button>
+              <Button 
+                variant="outline" 
+                className="text-amber-600 hover:text-amber-800 hover:bg-amber-50 border-amber-200"
+                onClick={(e) => handleArchiveUser(e, selectedUser)}
+              >
+                <TbArchive className="mr-2 h-4 w-4" /> Archive
+              </Button>
+              <Button variant="default" onClick={() => setIsViewModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

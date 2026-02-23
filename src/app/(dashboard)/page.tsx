@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { AdminService } from '@/services/admin.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Building2, CreditCard, DollarSign, Activity } from 'lucide-react';
 import {
   LineChart,
@@ -35,7 +36,7 @@ export default function DashboardPage() {
         AdminService.getAuditLogs(1, 5)
       ]);
       
-      setStats(dashboardRes.stats);
+      setStats(dashboardRes.data?.stats || dashboardRes.stats);
       setAnalytics(analyticsRes.data || analyticsRes);
       setRecentLogs(logsRes.data?.data || logsRes.data || []);
     } catch (error) {
@@ -44,14 +45,6 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      </div>
-    );
-  }
 
   // Format chart data
   const userGrowthData = analytics?.userGrowth?.map((item: any) => ({
@@ -75,10 +68,19 @@ export default function DashboardPage() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.organizations?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats?.organizations?.active || 0} active, {stats?.organizations?.suspended || 0} suspended
-            </p>
+            {loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{stats?.organizations?.total || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stats?.organizations?.active || 0} active, {stats?.organizations?.suspended || 0} suspended
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         
@@ -88,8 +90,17 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.users?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">Registered accounts</p>
+            {loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{stats?.users?.total || 0}</div>
+                <p className="text-xs text-muted-foreground">Registered accounts</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -99,12 +110,21 @@ export default function DashboardPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {(stats?.subscriptions?.pro || 0) + (stats?.subscriptions?.enterprise || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats?.subscriptions?.free || 0} free, {stats?.subscriptions?.pro || 0} pro, {stats?.subscriptions?.enterprise || 0} enterprise
-            </p>
+            {loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {(stats?.subscriptions?.pro || 0) + (stats?.subscriptions?.enterprise || 0)}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {stats?.subscriptions?.free || 0} free, {stats?.subscriptions?.pro || 0} pro, {stats?.subscriptions?.enterprise || 0} enterprise
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -114,10 +134,19 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${((stats?.subscriptions?.pro || 0) * 49) + ((stats?.subscriptions?.enterprise || 0) * 299)}
-            </div>
-            <p className="text-xs text-muted-foreground">Estimated Monthly Recurring Revenue</p>
+            {loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  ${((stats?.subscriptions?.pro || 0) * 49) + ((stats?.subscriptions?.enterprise || 0) * 299)}
+                </div>
+                <p className="text-xs text-muted-foreground">Estimated Monthly Recurring Revenue</p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -129,7 +158,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="pl-2">
             <div className="h-[300px] w-full">
-              {userGrowthData.length > 0 ? (
+              {loading ? (
+                <div className="flex h-full w-full items-end gap-2 px-4 pb-4">
+                  <Skeleton className="h-[40%] w-full" />
+                  <Skeleton className="h-[60%] w-full" />
+                  <Skeleton className="h-[30%] w-full" />
+                  <Skeleton className="h-[80%] w-full" />
+                  <Skeleton className="h-[50%] w-full" />
+                  <Skeleton className="h-[70%] w-full" />
+                  <Skeleton className="h-[90%] w-full" />
+                </div>
+              ) : userGrowthData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={userGrowthData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted-foreground))" opacity={0.2} />
@@ -155,7 +194,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
-              {recentLogs?.length > 0 ? (
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center">
+                    <Skeleton className="mr-4 h-9 w-9 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                  </div>
+                ))
+              ) : recentLogs?.length > 0 ? (
                 recentLogs.map((log: any) => (
                   <div key={log._id} className="flex items-center">
                     <div className="mr-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
