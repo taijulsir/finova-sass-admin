@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { TbEdit, TbTrash, TbMailForward, TbArchive, TbPlayerPause } from "react-icons/tb";
+import { TbEdit, TbTrash, TbMailForward, TbArchive, TbPlayerPause, TbRefresh } from "react-icons/tb";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -34,6 +34,7 @@ export interface UserColumnsProps {
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
   onSuspend?: (user: User) => void;
+  onResend?: (user: User) => void;
   tab?: string;
 }
 
@@ -42,6 +43,7 @@ export const getUserColumns = ({
   onEdit,
   onDelete,
   onSuspend,
+  onResend,
   tab = 'active',
 }: UserColumnsProps): Column<User>[] => {
   // ── Invited tab columns ──────────────────────────────────────────────────
@@ -49,14 +51,24 @@ export const getUserColumns = ({
     return [
       {
         accessorKey: "email",
-        header: "Invited Email",
+        header: "Invitee",
         cell: (row) => (
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-              <TbMailForward className="h-4 w-4 text-amber-500" />
-            </div>
+            <Avatar className="h-9 w-9 border border-muted shrink-0">
+              <AvatarImage src={row.avatar || undefined} alt={row.name || row.email} />
+              <AvatarFallback className="bg-amber-50 border border-amber-200 text-amber-600 font-medium text-xs">
+                {row.name && row.name !== '—'
+                  ? row.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
+                  : <TbMailForward className="h-4 w-4" />}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex flex-col">
-              <span className="font-medium text-foreground">{row.email}</span>
+              <span className="font-medium text-foreground">
+                {row.name && row.name !== '—' ? row.name : row.email}
+              </span>
+              {row.name && row.name !== '—' && (
+                <span className="text-xs text-muted-foreground">{row.email}</span>
+              )}
               <span className="text-xs text-muted-foreground">
                 Invited by {row.invitedBy?.name || 'Admin'}
               </span>
@@ -111,6 +123,21 @@ export const getUserColumns = ({
         cell: (row) => (
           <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
             <TooltipProvider>
+              {onResend && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary"
+                      onClick={() => onResend(row)}
+                    >
+                      <TbRefresh className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Resend Invitation</TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 

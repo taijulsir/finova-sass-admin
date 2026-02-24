@@ -106,6 +106,14 @@ export default function UsersPage() {
     onEdit: (user) => handleOpenEditModal(user),
     onDelete: (user) => handleDeleteUser(user),
     onSuspend: (user) => { setSuspendNote(''); handleOpenSuspendModal(user); },
+    onResend: async (user) => {
+      try {
+        await AdminService.resendInvite(user._id);
+        toast.success('Invitation resent successfully');
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message ?? 'Failed to resend invitation');
+      }
+    },
     tab: activeTab,
   }), [handleViewUser, handleOpenEditModal, handleDeleteUser, handleOpenSuspendModal, activeTab]);
 
