@@ -9,9 +9,7 @@ import {
   History,
   BarChart3,
   Settings,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -22,58 +20,45 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { usePermission } from "@/hooks/use-permission";
+import { useAuthStore } from "@/lib/store";
+import type { ModuleKey } from "@/lib/permissions";
 
-const items = [
-  {
-    title: "Dashboard",
-    url: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Organizations",
-    url: "/organizations",
-    icon: Building2,
-  },
-  {
-    title: "Subscriptions",
-    url: "/subscriptions",
-    icon: CreditCard,
-  },
-  {
-    title: "Users",
-    url: "/users",
-    icon: Users,
-  },
-  {
-    title: "Audit Logs",
-    url: "/audit",
-    icon: History,
-  },
-  {
-    title: "Analytics",
-    url: "/analytics",
-    icon: BarChart3,
-  },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-  },
+/** Each item declares which AdminModule key gates it (undefined = always visible) */
+const NAV_ITEMS: { title: string; url: string; icon: React.ElementType; module?: ModuleKey }[] = [
+  { title: "Dashboard",     url: "/",              icon: LayoutDashboard, module: "DASHBOARD" },
+  { title: "Organizations", url: "/organizations", icon: Building2,       module: "ORGANIZATIONS" },
+  { title: "Subscriptions", url: "/subscriptions", icon: CreditCard,      module: "SUBSCRIPTIONS" },
+  { title: "Users",         url: "/users",         icon: Users,           module: "USERS" },
+  { title: "Designations",  url: "/designations",  icon: ShieldCheck,     module: "DESIGNATIONS" },
+  { title: "Audit Logs",    url: "/audit",         icon: History,         module: "AUDIT" },
+  { title: "Analytics",     url: "/analytics",     icon: BarChart3,       module: "ANALYTICS" },
+  { title: "Settings",      url: "/settings",      icon: Settings,        module: "SETTINGS" },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { canView, isSuperAdmin } = usePermission();
+  const user = useAuthStore((s) => s.user);
+
+  // Filter nav items based on permissions (super admin sees everything)
+  const visibleItems = NAV_ITEMS.filter((item) =>
+    !item.module || canView(item.module)
+  );
+
+  // Display name / initials
+  const displayName = user?.name ?? "Admin";
+  const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+  const roleLabel = isSuperAdmin ? "Super Admin" : (user?.designation?.name ?? user?.globalRole ?? "Admin");
 
   return (
     <Sidebar collapsible="icon" className="border-r border-muted bg-card">
       <SidebarHeader className="h-16 flex items-center px-4 border-b border-muted">
-        <Link href="/dashboard" className="flex items-center gap-2 group">
+        <Link href="/" className="flex items-center gap-2 group">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Building2 className="size-5" />
           </div>
@@ -84,7 +69,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="px-2 py-4">
         <SidebarMenu>
-          {items.map((item, index) => (
+          {visibleItems.map((item, index) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild
@@ -96,10 +81,7 @@ export function AppSidebar() {
                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 )}
               >
-                <Link
-                  href={item.url}
-                  className="flex items-center justify-between w-full"
-                >
+                <Link href={item.url} className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2.5">
                     <item.icon className="h-5 w-5" />
                     <span className="font-medium group-data-[collapsible=icon]:hidden">
@@ -117,14 +99,14 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t border-muted p-4 group-data-[collapsed=true]:p-2">
         <div className="flex items-center gap-3 transition-all">
-          <div className="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold">
-            JD
+          <div className="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+            {user?.avatar
+              ? <img src={user.avatar} alt={displayName} className="h-8 w-8 rounded-full object-cover" />
+              : initials}
           </div>
           <div className="flex flex-col group-data-[collapsed=true]:hidden">
-            <span className="text-sm font-semibold leading-none">John Doe</span>
-            <span className="text-xs text-muted-foreground mt-1">
-              Super Admin
-            </span>
+            <span className="text-sm font-semibold leading-none">{displayName}</span>
+            <span className="text-xs text-muted-foreground mt-1">{roleLabel}</span>
           </div>
         </div>
       </SidebarFooter>
