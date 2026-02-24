@@ -33,16 +33,17 @@ export const PLATFORM_PERMISSIONS = {
 
 export type PlatformPermissionKey = typeof PLATFORM_PERMISSIONS[keyof typeof PLATFORM_PERMISSIONS];
 
-/** Sidebar module → required view permission mapping */
+/** Sidebar module → required view permission mapping.
+ *  A missing key means the item is always visible (no permission gate). */
 export const MODULE_PERMISSION_MAP: Record<string, PlatformPermissionKey> = {
-  DASHBOARD:     PLATFORM_PERMISSIONS.ORG_VIEW,
   ORGANIZATIONS: PLATFORM_PERMISSIONS.ORG_VIEW,
   SUBSCRIPTIONS: PLATFORM_PERMISSIONS.SUBSCRIPTION_VIEW,
+  PLANS:         PLATFORM_PERMISSIONS.PLAN_VIEW,
   USERS:         PLATFORM_PERMISSIONS.ADMIN_VIEW,
   DESIGNATIONS:  PLATFORM_PERMISSIONS.DESIGNATION_VIEW,
   AUDIT:         PLATFORM_PERMISSIONS.AUDIT_VIEW,
   ANALYTICS:     PLATFORM_PERMISSIONS.ANALYTICS_VIEW,
-  SETTINGS:      PLATFORM_PERMISSIONS.ORG_VIEW,
+  // DASHBOARD and SETTINGS have no gate — always visible to authenticated admins
 };
 
 // ── Legacy: kept so designation-form.tsx still compiles ─────────────────────
@@ -50,8 +51,9 @@ export const ADMIN_MODULES = [
   { key: 'DASHBOARD',      label: 'Dashboard' },
   { key: 'ORGANIZATIONS',  label: 'Organizations' },
   { key: 'SUBSCRIPTIONS',  label: 'Subscriptions' },
+  { key: 'PLANS',          label: 'Plans' },
   { key: 'USERS',          label: 'Users' },
-  { key: 'DESIGNATIONS',   label: 'Designations' },
+  { key: 'DESIGNATIONS',   label: 'Roles & Designations' },
   { key: 'AUDIT',          label: 'Audit Logs' },
   { key: 'ANALYTICS',      label: 'Analytics' },
   { key: 'SETTINGS',       label: 'Settings' },

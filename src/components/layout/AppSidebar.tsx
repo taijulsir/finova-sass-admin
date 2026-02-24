@@ -10,6 +10,7 @@ import {
   BarChart3,
   Settings,
   ShieldCheck,
+  Layers,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,16 +29,18 @@ import { usePermission } from "@/hooks/use-permission";
 import { useAuthStore } from "@/lib/store";
 import type { ModuleKey } from "@/lib/permissions";
 
-/** Each item declares which AdminModule key gates it (undefined = always visible) */
+/** Each nav item optionally declares a module key that gates it via platform permissions.
+ *  Items with no `module` are always visible to any authenticated admin. */
 const NAV_ITEMS: { title: string; url: string; icon: React.ElementType; module?: ModuleKey }[] = [
-  { title: "Dashboard",     url: "/",              icon: LayoutDashboard, module: "DASHBOARD" },
-  { title: "Organizations", url: "/organizations", icon: Building2,       module: "ORGANIZATIONS" },
-  { title: "Subscriptions", url: "/subscriptions", icon: CreditCard,      module: "SUBSCRIPTIONS" },
-  { title: "Users",         url: "/users",         icon: Users,           module: "USERS" },
-  { title: "Designations",  url: "/designations",  icon: ShieldCheck,     module: "DESIGNATIONS" },
-  { title: "Audit Logs",    url: "/audit",         icon: History,         module: "AUDIT" },
-  { title: "Analytics",     url: "/analytics",     icon: BarChart3,       module: "ANALYTICS" },
-  { title: "Settings",      url: "/settings",      icon: Settings,        module: "SETTINGS" },
+  { title: "Dashboard",           url: "/",              icon: LayoutDashboard },
+  { title: "Organizations",       url: "/organizations", icon: Building2,       module: "ORGANIZATIONS" },
+  { title: "Subscriptions",       url: "/subscriptions", icon: CreditCard,      module: "SUBSCRIPTIONS" },
+  { title: "Plans",               url: "/plans",         icon: Layers,          module: "PLANS" },
+  { title: "Users",               url: "/users",         icon: Users,           module: "USERS" },
+  { title: "Roles & Designations",url: "/designations",  icon: ShieldCheck,     module: "DESIGNATIONS" },
+  { title: "Audit Logs",          url: "/audit",         icon: History,         module: "AUDIT" },
+  { title: "Analytics",           url: "/analytics",     icon: BarChart3,       module: "ANALYTICS" },
+  { title: "Settings",            url: "/settings",      icon: Settings },
 ];
 
 export function AppSidebar() {
