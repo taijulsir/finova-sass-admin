@@ -28,16 +28,6 @@ export const useUserHandlers = (refreshData: () => void) => {
     setIsViewModalOpen(true);
   }, []);
 
-  const handleArchiveUser = useCallback(async (user: any) => {
-    try {
-      await AdminService.archiveUser(user._id);
-      toast.success(`User ${user.status === 'active' ? 'archived' : 'activated'} successfully`);
-      refreshData();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update user status");
-    }
-  }, [refreshData]);
-
   const handleDeleteUser = useCallback(async (user: any) => {
     if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
     
@@ -64,7 +54,6 @@ export const useUserHandlers = (refreshData: () => void) => {
     handleOpenAddModal,
     handleOpenEditModal,
     handleViewUser,
-    handleArchiveUser,
     handleDeleteUser
   };
 };

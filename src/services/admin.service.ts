@@ -25,7 +25,7 @@ export const AdminService = {
     });
     return data;
   },
-  getUsers: async (params: any = { page: 1, limit: 10, search: '', isActive: true }) => {
+  getUsers: async (params: any = { page: 1, limit: 10, search: '', tab: 'active' }) => {
     const { data } = await api.get('/admin/users', {
       params,
     });
@@ -33,6 +33,10 @@ export const AdminService = {
   },
   createUser: async (userData: any) => {
     const { data } = await api.post('/admin/users', userData);
+    return data;
+  },
+  inviteUser: async (userData: any) => {
+    const { data } = await api.post('/admin/users/invite', userData);
     return data;
   },
   getAuditLogs: async (params: any = { page: 1, limit: 10, search: '', action: '' }) => {

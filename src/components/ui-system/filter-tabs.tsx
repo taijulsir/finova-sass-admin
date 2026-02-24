@@ -9,6 +9,14 @@ interface FilterTabsProps {
   options?: { label: string; value: string }[];
 }
 
+const GRID_COLS: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+  5: "grid-cols-5",
+};
+
 export function FilterTabs({
   activeTab,
   onTabChange,
@@ -18,13 +26,15 @@ export function FilterTabs({
     { label: "Archived", value: "archived" },
   ],
 }: FilterTabsProps) {
+  const colClass = GRID_COLS[options.length] ?? "grid-cols-4";
+
   return (
     <Tabs
       value={activeTab}
       onValueChange={onTabChange}
-      className={`w-full max-w-100 ${className}`}
+      className={`w-full max-w-sm ${className}`}
     >
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className={`grid w-full ${colClass}`}>
         {options.map((option) => (
           <TabsTrigger key={option.value} value={option.value}>
             {option.label}
