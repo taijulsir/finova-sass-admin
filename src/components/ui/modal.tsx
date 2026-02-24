@@ -14,7 +14,14 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  size?: 'default' | 'lg' | 'xl';
 }
+
+const sizeClass: Record<string, string> = {
+  default: 'sm:max-w-[425px]',
+  lg: 'sm:max-w-4xl',
+  xl: 'sm:max-w-5xl',
+};
 
 export const Modal: React.FC<ModalProps> = ({
   title,
@@ -22,6 +29,7 @@ export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   children,
+  size = 'default',
 }) => {
   const onChange = (open: boolean) => {
     if (!open) {
@@ -31,7 +39,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onChange}>
-      <DialogContent className="sm:max-w-106.25">
+      <DialogContent className={sizeClass[size]}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

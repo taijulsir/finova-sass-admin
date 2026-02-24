@@ -5,18 +5,18 @@ import { Controller, useWatch, useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { AdminService } from "@/services/admin.service";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Mail } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 
 export const userSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
+  // Email is required for invite (new user) — optional only when editing an existing user
   email: z.string().email("Invalid email address").optional(),
-  role: z.string().min(1),
+  role: z.string().min(1, "Role is required"),
   avatar: z.union([z.instanceof(File), z.string()]).optional().nullable(),
   isInvite: z.boolean().optional(),
-  designationId: z.string().optional().nullable(),
 });
 
 export type UserFormValues = z.infer<typeof userSchema>;
@@ -45,17 +45,7 @@ export function UserForm({
     role: defaultValues?.role?.toUpperCase() ?? "USER",
     avatar: defaultValues?.avatar ?? null,
     isInvite: isEdit ? defaultValues?.isInvite : true,
-    designationId: defaultValues?.designationId ?? null,
   };
-
-  const [designations, setDesignations] = useState<{ _id: string; name: string }[]>([]);
-
-  useEffect(() => {
-    if (!isEdit) return;
-    AdminService.getAllDesignations()
-      .then((data) => setDesignations(data))
-      .catch(console.error);
-  }, [isEdit]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<UserFormValues, any, UserFormValues>({
@@ -96,7 +86,14 @@ export function UserForm({
   }, [debouncedEmail, isEdit]);
 
   const handleSubmit = async (data: UserFormValues) => {
-    if (!isEdit && emailStatus && !emailStatus.available) return;
+    // Guard: invite requires a valid, available email
+    if (!isEdit) {
+      if (!data.email || !data.email.includes("@")) {
+        form.setError("email", { message: "Email is required to send an invitation" });
+        return;
+      }
+      if (emailStatus && !emailStatus.available) return;
+    }
     await onSubmit(data);
   };
 
@@ -104,43 +101,59 @@ export function UserForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <div className="space-y-6 py-4">
-          <div className="flex justify-center">
-            <Controller
-              control={form.control}
-              name="avatar"
-              render={({ field }) => (
-                <ImageUploader
-                  value={field.value}
-                  onChange={field.onChange}
-                  shape="circle"
-                  folder="users"
-                  width={200}
-                  height={200}
-                  label="Profile Picture"
-                />
-              )}
-            />
-          </div>
+          {/* Avatar — only shown when editing; no avatar upload for invites */}
+          {isEdit && (
+            <div className="flex justify-center">
+              <Controller
+                control={form.control}
+                name="avatar"
+                render={({ field }) => (
+                  <ImageUploader
+                    value={field.value}
+                    onChange={field.onChange}
+                    shape="circle"
+                    folder="users"
+                    width={200}
+                    height={200}
+                    label="Profile Picture"
+                  />
+                )}
+              />
+            </div>
+          )}
+
+          {/* Invite banner */}
+          {!isEdit && (
+            <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+              <Mail className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-sm text-muted-foreground leading-snug">
+                An invitation email with a registration link will be sent to the invitee.
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-4">
+            {/* Invitee / user full name */}
             <ShortTextInput
               control={form.control}
               name="name"
-              label="Full Name"
-              placeholder="John Doe"
+              label={isEdit ? "Full Name" : "Invitee Name"}
+              placeholder={isEdit ? "John Doe" : "e.g. John Doe"}
               disabled={isSubmitting}
             />
 
+            {/* Email — required for invite, hidden for edit */}
             {!isEdit && (
               <div className="relative">
                 <ShortTextInput
                   control={form.control}
                   name="email"
-                  label="Email Address"
-                  placeholder="john@example.com"
+                  label="Invitee Email Address"
+                  placeholder="john@company.com"
                   disabled={isSubmitting}
                 />
-                <div className="absolute right-0 top-0 mt-8 pt-1 pr-2">
+                {/* Inline email availability indicator */}
+                <div className="absolute right-0 top-0 mt-8 pt-1 pr-2 flex items-center">
                   {isValidatingEmail && (
                     <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
                   )}
@@ -151,11 +164,7 @@ export function UserForm({
                       ) : (
                         <AlertCircle className="h-4 w-4 text-destructive" />
                       )}
-                      <span
-                        className={`text-[10px] ${
-                          emailStatus.available ? "text-green-600" : "text-destructive"
-                        }`}
-                      >
+                      <span className={`text-[10px] ${emailStatus.available ? "text-green-600" : "text-destructive"}`}>
                         {emailStatus.message}
                       </span>
                     </div>
@@ -178,19 +187,6 @@ export function UserForm({
               disabled={isSubmitting}
             />
 
-            {isEdit && (
-              <SelectInput
-                control={form.control}
-                name="designationId"
-                label="Designation"
-                placeholder="Select designation"
-                options={[
-                  { label: "None", value: "" },
-                  ...(Array.isArray(designations) ? designations : []).map((d) => ({ label: d.name, value: d._id })),
-                ]}
-                disabled={isSubmitting}
-              />
-            )}
           </div>
         </div>
 
@@ -200,13 +196,14 @@ export function UserForm({
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || (!isEdit && emailStatus?.available === false)}
+            disabled={isSubmitting || (!isEdit && !!emailStatus && !emailStatus.available)}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEdit ? "Update" : "Send Invite"}
+            {isEdit ? "Update User" : "Send Invitation"}
           </Button>
         </div>
       </form>
     </Form>
   );
 }
+

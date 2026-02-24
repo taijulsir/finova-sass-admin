@@ -75,10 +75,6 @@ export default function UsersPage() {
 
       if (isEditModalOpen && selectedUser) {
         await AdminService.updateUser(selectedUser._id, payload);
-        // Assign designation separately if it changed
-        if (data.designationId !== undefined) {
-          await AdminService.assignDesignation(selectedUser._id, data.designationId || null);
-        }
         toast.success("User updated successfully");
       } else {
         if (data.isInvite) {
@@ -120,7 +116,7 @@ export default function UsersPage() {
           title="Users"
           description="Manage system users, roles, and permissions."
           action={{
-            label: "Add User",
+            label: "Invite User",
             icon: Plus,
             onClick: handleOpenAddModal
           }}
@@ -177,8 +173,12 @@ export default function UsersPage() {
 
       {/* Forms Modal */}
       <Modal
-        title={isEditModalOpen ? "Edit User" : "Add User"}
-        description={isEditModalOpen ? "Update user account information." : "Onboard a new system user."}
+        title={isEditModalOpen ? "Edit User" : "Invite User"}
+        description={
+          isEditModalOpen
+            ? "Update user account details and designation."
+            : "Send an invitation email. The invitee will receive a link to complete their registration."
+        }
         isOpen={isAddModalOpen || isEditModalOpen}
         onClose={() => {
           setIsAddModalOpen(false);
@@ -193,7 +193,6 @@ export default function UsersPage() {
             email: selectedUser.email,
             role: selectedUser.role,
             avatar: selectedUser.avatar,
-            designationId: selectedUser.designationId ?? null,
           } : undefined}
           onSubmit={handleFormSubmit}
           onCancel={() => {

@@ -37,7 +37,7 @@ const NAV_ITEMS: { title: string; url: string; icon: React.ElementType; module?:
   { title: "Subscriptions",       url: "/subscriptions", icon: CreditCard,      module: "SUBSCRIPTIONS" },
   { title: "Plans",               url: "/plans",         icon: Layers,          module: "PLANS" },
   { title: "Users",               url: "/users",         icon: Users,           module: "USERS" },
-  { title: "Roles & Designations",url: "/designations",  icon: ShieldCheck,     module: "DESIGNATIONS" },
+  { title: "Roles & Permissions",  url: "/roles",         icon: ShieldCheck,     module: "ROLES" },
   { title: "Audit Logs",          url: "/audit",         icon: History,         module: "AUDIT" },
   { title: "Analytics",           url: "/analytics",     icon: BarChart3,       module: "ANALYTICS" },
   { title: "Settings",            url: "/settings",      icon: Settings },

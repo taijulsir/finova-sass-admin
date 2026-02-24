@@ -96,29 +96,25 @@ export const AdminService = {
     return data;
   },
 
-  // ── Designations ──────────────────────────────────────────────────────────
-  getDesignations: async (params: any = { page: 1, limit: 50 }) => {
+  // ── Roles ─────────────────────────────────────────────────────────────────
+  getRoles: async (params: any = { page: 1, limit: 50 }) => {
     const { data } = await api.get('/admin/designations', { params });
     return data;
   },
-  getAllDesignations: async () => {
+  getAllRoles: async () => {
     const { data } = await api.get('/admin/designations/all');
     return data;
   },
-  createDesignation: async (payload: any) => {
+  createRole: async (payload: any) => {
     const { data } = await api.post('/admin/designations', payload);
     return data;
   },
-  updateDesignation: async (id: string, payload: any) => {
+  updateRole: async (id: string, payload: any) => {
     const { data } = await api.patch(`/admin/designations/${id}`, payload);
     return data;
   },
-  archiveDesignation: async (id: string) => {
+  archiveRole: async (id: string) => {
     const { data } = await api.delete(`/admin/designations/${id}`);
-    return data;
-  },
-  assignDesignation: async (userId: string, designationId: string | null) => {
-    const { data } = await api.patch(`/admin/users/${userId}/designation`, { designationId });
     return data;
   },
 }

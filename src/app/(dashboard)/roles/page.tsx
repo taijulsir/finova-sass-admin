@@ -13,8 +13,8 @@ import { useFetchData } from '@/hooks/use-fetch-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ADMIN_MODULES, ADMIN_ACTIONS } from '@/lib/permissions';
-import { DesignationForm, DesignationFormValues } from './components/designation-form';
+import { ADMIN_MODULES } from '@/lib/permissions';
+import { RoleForm, RoleFormValues } from './components/role-form';
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ function permissionSummary(permissions: { module: string; actions: string[] }[])
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default function DesignationsPage() {
+export default function RolesPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -57,46 +57,46 @@ export default function DesignationsPage() {
     [page, limit, search]
   );
 
-  const { data: designations, loading, totalItems, totalPages, refresh } = useFetchData(
-    AdminService.getDesignations,
+  const { data: roles, loading, totalItems, totalPages, refresh } = useFetchData(
+    AdminService.getRoles,
     fetchParams
   );
 
-  const handleCreate = useCallback(async (formData: DesignationFormValues) => {
+  const handleCreate = useCallback(async (formData: RoleFormValues) => {
     setIsSubmitting(true);
     try {
-      await AdminService.createDesignation(formData);
-      toast.success('Designation created');
+      await AdminService.createRole(formData);
+      toast.success('Role created');
       setIsAddOpen(false);
       refresh();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to create designation');
+      toast.error(err?.response?.data?.message ?? 'Failed to create role');
     } finally {
       setIsSubmitting(false);
     }
   }, [refresh]);
 
-  const handleUpdate = useCallback(async (formData: DesignationFormValues) => {
+  const handleUpdate = useCallback(async (formData: RoleFormValues) => {
     if (!selected) return;
     setIsSubmitting(true);
     try {
-      await AdminService.updateDesignation(selected._id, formData);
-      toast.success('Designation updated');
+      await AdminService.updateRole(selected._id, formData);
+      toast.success('Role updated');
       setIsEditOpen(false);
       setSelected(null);
       refresh();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to update designation');
+      toast.error(err?.response?.data?.message ?? 'Failed to update role');
     } finally {
       setIsSubmitting(false);
     }
   }, [selected, refresh]);
 
   const handleArchive = useCallback(async (item: any) => {
-    if (!confirm(`Archive designation "${item.name}"?`)) return;
+    if (!confirm(`Archive role "${item.name}"?`)) return;
     try {
-      await AdminService.archiveDesignation(item._id);
-      toast.success('Designation archived');
+      await AdminService.archiveRole(item._id);
+      toast.success('Role archived');
       refresh();
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? 'Failed to archive');
@@ -106,7 +106,7 @@ export default function DesignationsPage() {
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Designation',
+      header: 'Role',
       cell: (row: any) => (
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
@@ -178,15 +178,15 @@ export default function DesignationsPage() {
     <div className="h-full flex flex-col space-y-4 overflow-hidden">
       <div className="px-6 pt-6 shrink-0">
         <PageHeader
-          title="Designations"
+          title="Roles & Permissions"
           description="Define admin roles and control module-level access permissions."
-          action={{ label: 'Add Designation', icon: Plus, onClick: () => setIsAddOpen(true) }}
+          action={{ label: 'Add Role', icon: Plus, onClick: () => setIsAddOpen(true) }}
         />
       </div>
 
       <div className="px-6 shrink-0">
         <FilterSection
-          searchPlaceholder="Search designations..."
+          searchPlaceholder="Search roles..."
           searchValue={search}
           onSearchChange={(val) => { setSearch(val); setPage(1); }}
           activeTab="all"
@@ -196,7 +196,7 @@ export default function DesignationsPage() {
       </div>
 
       <div className="flex-1 overflow-hidden px-6">
-        <DataTable columns={columns as any} data={designations} loading={loading} />
+        <DataTable columns={columns as any} data={roles} loading={loading} />
       </div>
 
       <div className="px-6 pb-6 pt-2 border-t mt-auto shrink-0 bg-background/80 backdrop-blur-sm z-20">
@@ -207,18 +207,19 @@ export default function DesignationsPage() {
           limit={limit}
           onPageChange={setPage}
           onLimitChange={(l) => { setLimit(l); setPage(1); }}
-          itemName="designations"
+          itemName="roles"
         />
       </div>
 
       {/* Create Modal */}
       <Modal
-        title="Add Designation"
-        description="Define a new admin designation and assign module permissions."
+        title="Add Role"
+        description="Define a new admin role and assign module permissions."
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
+        size="lg"
       >
-        <DesignationForm
+        <RoleForm
           onSubmit={handleCreate}
           onCancel={() => setIsAddOpen(false)}
           isSubmitting={isSubmitting}
@@ -227,13 +228,14 @@ export default function DesignationsPage() {
 
       {/* Edit Modal */}
       <Modal
-        title="Edit Designation"
-        description="Update designation name and permissions."
+        title="Edit Role"
+        description="Update role name and permissions."
         isOpen={isEditOpen}
         onClose={() => { setIsEditOpen(false); setSelected(null); }}
+        size="lg"
       >
         {selected && (
-          <DesignationForm
+          <RoleForm
             isEdit
             defaultValues={{
               name: selected.name,

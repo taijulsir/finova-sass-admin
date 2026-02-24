@@ -40,20 +40,19 @@ export const MODULE_PERMISSION_MAP: Record<string, PlatformPermissionKey> = {
   SUBSCRIPTIONS: PLATFORM_PERMISSIONS.SUBSCRIPTION_VIEW,
   PLANS:         PLATFORM_PERMISSIONS.PLAN_VIEW,
   USERS:         PLATFORM_PERMISSIONS.ADMIN_VIEW,
-  DESIGNATIONS:  PLATFORM_PERMISSIONS.DESIGNATION_VIEW,
+  ROLES:         PLATFORM_PERMISSIONS.DESIGNATION_VIEW,
   AUDIT:         PLATFORM_PERMISSIONS.AUDIT_VIEW,
   ANALYTICS:     PLATFORM_PERMISSIONS.ANALYTICS_VIEW,
   // DASHBOARD and SETTINGS have no gate — always visible to authenticated admins
 };
 
-// ── Legacy: kept so designation-form.tsx still compiles ─────────────────────
 export const ADMIN_MODULES = [
   { key: 'DASHBOARD',      label: 'Dashboard' },
   { key: 'ORGANIZATIONS',  label: 'Organizations' },
   { key: 'SUBSCRIPTIONS',  label: 'Subscriptions' },
   { key: 'PLANS',          label: 'Plans' },
   { key: 'USERS',          label: 'Users' },
-  { key: 'DESIGNATIONS',   label: 'Roles & Designations' },
+  { key: 'ROLES',          label: 'Roles & Permissions' },
   { key: 'AUDIT',          label: 'Audit Logs' },
   { key: 'ANALYTICS',      label: 'Analytics' },
   { key: 'SETTINGS',       label: 'Settings' },
