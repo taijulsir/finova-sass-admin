@@ -1,18 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PermissionMap } from './permissions';
 
 interface AuthState {
   token: string | null;
   user: any | null;
-  /** Flat permission map populated from designation on login: { USERS: ['VIEW','CREATE'], ... } */
-  permissions: PermissionMap | null;
+  /** Flat array of permission strings from platform RBAC: ['ORG_VIEW', 'ADMIN_INVITE', ...] */
+  permissions: string[];
+  /** Platform role names assigned to the user: ['SUPER_ADMIN'] */
+  platformRoles: string[];
   isAuthenticated: boolean;
   isLoading: boolean;
-  
+
   setToken: (token: string | null) => void;
   setUser: (user: any) => void;
-  setPermissions: (permissions: PermissionMap | null) => void;
+  setPermissions: (permissions: string[]) => void;
+  setPlatformRoles: (roles: string[]) => void;
   logout: () => void;
 }
 
@@ -21,14 +23,16 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
-      permissions: null,
+      permissions: [],
+      platformRoles: [],
       isAuthenticated: false,
       isLoading: true,
 
       setToken: (token) => set({ token, isAuthenticated: !!token }),
       setUser: (user) => set({ user }),
       setPermissions: (permissions) => set({ permissions }),
-      logout: () => set({ token: null, user: null, permissions: null, isAuthenticated: false }),
+      setPlatformRoles: (platformRoles) => set({ platformRoles }),
+      logout: () => set({ token: null, user: null, permissions: [], platformRoles: [], isAuthenticated: false }),
     }),
     {
       name: 'auth-storage',
@@ -36,6 +40,7 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         user: state.user,
         permissions: state.permissions,
+        platformRoles: state.platformRoles,
         isAuthenticated: state.isAuthenticated,
       }),
     }

@@ -1,33 +1,41 @@
 import { useAuthStore } from '@/lib/store';
-import type { ModuleKey, ActionKey } from '@/lib/permissions';
+import type { PlatformPermissionKey } from '@/lib/permissions';
+import { MODULE_PERMISSION_MAP } from '@/lib/permissions';
 
 /**
- * Returns helpers for permission checking.
+ * usePermission
+ * -------------
+ * Returns helpers for platform-level permission checking.
  *
- * SUPER_ADMIN always gets full access regardless of designation.
+ * Permissions are a flat string[] loaded from the server on login.
+ * Every check goes through the array — no role-name bypass.
  *
  * Usage:
- *   const { can, canView } = usePermission();
- *   can('USERS', 'CREATE')   // true / false
- *   canView('USERS')         // true / false
+ *   const { can, canViewModule } = usePermission();
+ *   can('ORG_VIEW')         // true / false
+ *   canViewModule('USERS')  // checks MODULE_PERMISSION_MAP['USERS']
  */
 export function usePermission() {
-  const { user, permissions } = useAuthStore();
-  const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
+  const { permissions } = useAuthStore();
 
   /**
-   * Check if the current user has a specific action on a module.
-   * Super admins always return true.
+   * Check if the current user has a specific platform permission.
    */
-  const can = (module: ModuleKey, action: ActionKey): boolean => {
-    if (isSuperAdmin) return true;
-    return (permissions?.[module] ?? []).includes(action);
+  const can = (permission: PlatformPermissionKey): boolean => {
+    if (!Array.isArray(permissions)) return false;
+    return permissions.includes(permission);
   };
 
-  const canView    = (module: ModuleKey) => can(module, 'VIEW');
-  const canCreate  = (module: ModuleKey) => can(module, 'CREATE');
-  const canEdit    = (module: ModuleKey) => can(module, 'EDIT');
-  const canArchive = (module: ModuleKey) => can(module, 'ARCHIVE');
+  /**
+   * Check if the user can view a sidebar module.
+   * Uses MODULE_PERMISSION_MAP to resolve the required permission.
+   */
+  const canViewModule = (moduleKey: string): boolean => {
+    const requiredPerm = MODULE_PERMISSION_MAP[moduleKey];
+    if (!requiredPerm) return false;
+    return can(requiredPerm);
+  };
 
-  return { can, canView, canCreate, canEdit, canArchive, isSuperAdmin };
+  return { can, canViewModule, permissions };
 }
+
