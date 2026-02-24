@@ -84,21 +84,31 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="px-2 py-4">
         <SidebarMenu>
-          {items.map((item) => (
+          {items.map((item, index) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild
                 isActive={pathname === item.url}
                 className={cn(
-                  "rounded-xl h-11 px-3 transition-all duration-200",
-                  pathname === item.url 
-                    ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                  "rounded-xl h-11 px-3 transition-all duration-200 group/item",
+                  pathname === item.url
+                    ? "bg-primary/10 text-primary hover:bg-primary/20"
                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 )}
               >
-                <Link href={item.url}>
-                  <item.icon className="h-5 w-5" />
-                  <span className="font-medium">{item.title}</span>
+                <Link
+                  href={item.url}
+                  className="flex items-center justify-between w-full"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <item.icon className="h-5 w-5" />
+                    <span className="font-medium group-data-[collapsible=icon]:hidden">
+                      {item.title}
+                    </span>
+                  </div>
+                  <kbd className="hidden md:flex items-center opacity-0 group-hover/item:opacity-40 transition-opacity pointer-events-none select-none h-5 gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
+                    ⌥{index + 1}
+                  </kbd>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -112,7 +122,9 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col group-data-[collapsed=true]:hidden">
             <span className="text-sm font-semibold leading-none">John Doe</span>
-            <span className="text-xs text-muted-foreground mt-1">Super Admin</span>
+            <span className="text-xs text-muted-foreground mt-1">
+              Super Admin
+            </span>
           </div>
         </div>
       </SidebarFooter>

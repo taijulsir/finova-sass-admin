@@ -5,12 +5,14 @@ import { AppSidebar } from "./AppSidebar";
 import { TopNav } from "./TopNav";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
+import { KeyboardShortcutManager } from "@/hooks/use-keyboard-shortcuts";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
     <SidebarProvider>
+      <KeyboardShortcutManager />
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <SidebarInset className="flex flex-col h-screen overflow-hidden">

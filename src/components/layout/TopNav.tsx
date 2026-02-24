@@ -15,6 +15,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function TopNav() {
   const router = useRouter();
@@ -28,14 +34,31 @@ export function TopNav() {
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-muted bg-background/80 px-4 backdrop-blur-md md:px-6">
       <div className="flex items-center gap-4">
-        <SidebarTrigger className="-ml-1" />
-        <div className="hidden md:flex relative max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <SidebarTrigger className="-ml-1" />
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-[10px] font-mono">
+              Toggle Sidebar{" "}
+              <kbd className="ml-1 opacity-50">⌘B</kbd> or{" "}
+              <kbd className="opacity-50">⌘\</kbd>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <div className="hidden md:flex relative max-w-sm group">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <input
+            id="platform-search"
             type="search"
             placeholder="Search platform..."
-            className="h-9 w-64 rounded-xl border border-muted bg-background/50 pl-9 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="h-9 w-64 rounded-xl border border-muted bg-background/50 pl-9 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-50 group-focus-within:opacity-0 transition-opacity">
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              /
+            </kbd>
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-3">
