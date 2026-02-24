@@ -16,7 +16,8 @@ import { MODULE_PERMISSION_MAP } from '@/lib/permissions';
  *   canViewModule('USERS')  // checks MODULE_PERMISSION_MAP['USERS']
  */
 export function usePermission() {
-  const { permissions } = useAuthStore();
+  // Use a stable primitive selector to avoid new-object-on-every-render trap
+  const permissions = useAuthStore((s) => s.permissions);
 
   /**
    * Check if the current user has a specific platform permission.
@@ -38,4 +39,3 @@ export function usePermission() {
 
   return { can, canViewModule, permissions };
 }
-

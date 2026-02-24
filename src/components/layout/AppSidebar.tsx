@@ -43,17 +43,28 @@ const NAV_ITEMS: { title: string; url: string; icon: React.ElementType; module?:
 export function AppSidebar() {
   const pathname = usePathname();
   const { canViewModule } = usePermission();
-  const { user, platformRoles } = useAuthStore((s) => ({ user: s.user, platformRoles: s.platformRoles }));
 
-  // Filter nav items based on platform permissions
-  const visibleItems = NAV_ITEMS.filter((item) =>
-    !item.module || canViewModule(item.module)
-  );
+  // Use individual stable primitive selectors — never pass an inline object selector
+  // to a persisted zustand store, as it creates a new reference every render.
+  const user          = useAuthStore((s) => s.user);
+  const platformRoles = useAuthStore((s) => s.platformRoles);
+
+  // Hydration guard: zustand/persist rehydrates from localStorage only on the client.
+  // Until hydration is complete the store returns default values, which differ from
+  // what SSR rendered. We defer rendering permission-gated content until mounted.
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
+
+  // Filter nav items based on platform permissions (use all items on server to avoid mismatch)
+  const visibleItems = mounted
+    ? NAV_ITEMS.filter((item) => !item.module || canViewModule(item.module))
+    : NAV_ITEMS;
 
   // Display name / initials
   const displayName = user?.name ?? "Admin";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
   const roleLabel = platformRoles?.[0] ?? user?.globalRole ?? "Admin";
+
 
   return (
     <Sidebar collapsible="icon" className="border-r border-muted bg-card">

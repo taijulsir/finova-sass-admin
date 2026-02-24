@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>()(
       permissions: [],
       platformRoles: [],
       isAuthenticated: false,
-      isLoading: true,
+      isLoading: false,
 
       setToken: (token) => set({ token, isAuthenticated: !!token }),
       setUser: (user) => set({ user }),
