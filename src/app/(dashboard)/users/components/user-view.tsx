@@ -1,13 +1,12 @@
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { TbEdit, TbArchive } from "react-icons/tb";
+import { TbEdit } from "react-icons/tb";
 
 interface UserViewProps {
   user: any;
   isOpen: boolean;
   onClose: () => void;
   onEdit: (user: any) => void;
-  onArchive: (user: any) => void;
 }
 
 export function UserView({
@@ -15,7 +14,6 @@ export function UserView({
   isOpen,
   onClose,
   onEdit,
-  onArchive,
 }: UserViewProps) {
   if (!user) return null;
 
@@ -41,14 +39,6 @@ export function UserView({
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Role</p>
             <p className="text-base capitalize font-semibold text-foreground">{user.role}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Status</p>
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-              user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-            }`}>
-              {user.status}
-            </span>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Joined At</p>
@@ -77,13 +67,6 @@ export function UserView({
             onClick={() => onEdit(user)}
           >
             <TbEdit className="mr-2 h-4 w-4" /> Edit
-          </Button>
-          <Button 
-            variant="outline" 
-            className="text-amber-600 hover:text-amber-800 hover:bg-amber-50 border-amber-200"
-            onClick={() => onArchive(user)}
-          >
-            <TbArchive className="mr-2 h-4 w-4" /> Archive
           </Button>
          
         </div>

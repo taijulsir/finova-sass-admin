@@ -3,12 +3,14 @@
 import { Badge } from "@/components/ui/badge";
 import { TableActionDropdown } from "@/components/ui-system/table-action-dropdown";
 import { TbEye, TbEdit, TbArchive, TbTrash } from "react-icons/tb";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export type Organization = {
   _id: string;
   name: string;
   plan: string;
   status: string;
+  logo?: string;
   ownerId: {
     name: string;
     email: string;
@@ -38,11 +40,25 @@ export const getOrganizationColumns = ({
 }: OrganizationColumnsProps): Column<Organization>[] => [
   {
     accessorKey: "name",
-    header: "Name",
+    header: "Organization",
     cell: (org) => (
-      <div className="flex flex-col">
-        <span className="font-medium text-foreground">{org.name}</span>
-        <span className="text-xs text-muted-foreground font-mono">{org._id}</span>
+      <div className="flex items-center gap-3">
+        <Avatar className="h-9 w-9 border border-muted rounded-lg">
+          <AvatarImage src={org.logo} alt={org.name} />
+          <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs rounded-lg">
+            {org.name.split(" ")
+              .map((n: string) => n[0])
+              .join("")
+              .toUpperCase()
+              .substring(0, 2)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col">
+          <span className="font-medium text-foreground">{org.name}</span>
+          <span className="text-xs text-muted-foreground font-mono">
+            {org._id}
+          </span>
+        </div>
       </div>
     ),
   },
@@ -54,7 +70,9 @@ export const getOrganizationColumns = ({
       return (
         <div className="flex flex-col">
           <span className="text-sm font-medium">{owner?.name || "N/A"}</span>
-          <span className="text-xs text-muted-foreground">{owner?.email || "N/A"}</span>
+          <span className="text-xs text-muted-foreground">
+            {owner?.email || "N/A"}
+          </span>
         </div>
       );
     },

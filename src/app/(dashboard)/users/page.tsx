@@ -14,19 +14,20 @@ import { UserView } from "./components/user-view";
 import { getUserColumns } from "./user-utils";
 import { useUserHandlers } from "./user-helpers";
 import { useFetchData } from "@/hooks/use-fetch-data";
+import { resolveAvatar } from "@/components/ui/image-uploader/image-uploader";
 
 export default function UsersPage() {
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('active');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [activeTab, setActiveTab] = useState('active');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchParams = useMemo(() => ({
     page,
     limit,
     search,
-    isActive: activeTab === 'active'
+    tab: activeTab,
   }), [page, limit, search, activeTab]);
 
   const {
@@ -35,7 +36,7 @@ export default function UsersPage() {
     totalItems,
     totalPages,
     refresh
-  } = useFetchData(AdminService.getUsers, fetchParams, [activeTab]);
+  } = useFetchData(AdminService.getUsers, fetchParams);
 
   const {
     isAddModalOpen,
@@ -48,26 +49,35 @@ export default function UsersPage() {
     handleOpenAddModal,
     handleOpenEditModal,
     handleViewUser,
-    handleArchiveUser,
     handleDeleteUser
   } = useUserHandlers(refresh);
 
   const handleFormSubmit = async (data: UserFormValues) => {
     setIsSubmitting(true);
     try {
+      // Upload the image only NOW (on submit) if a File was picked
+      const avatarUrl = await resolveAvatar(data.avatar, "users", 200, 200);
+      const payload = { ...data, avatar: avatarUrl };
+
       if (isEditModalOpen && selectedUser) {
-        await AdminService.updateUser(selectedUser._id, data);
+        await AdminService.updateUser(selectedUser._id, payload);
         toast.success("User updated successfully");
       } else {
-        await AdminService.createUser(data);
-        toast.success("User created successfully");
+        if (data.isInvite) {
+          await AdminService.inviteUser(payload);
+          toast.success("Invitation sent successfully");
+          setActiveTab('invited'); // ← auto-switch to invited tab
+        } else {
+          await AdminService.createUser(payload);
+          toast.success("User created successfully");
+        }
       }
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
-      refresh(); 
+      refresh();
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.response?.data?.message || `Failed to ${isEditModalOpen ? 'update' : 'create'} user`);
+      toast.error(error?.response?.data?.message || error?.message || `Failed to ${isEditModalOpen ? 'update' : 'create'} user`);
     } finally {
       setIsSubmitting(false);
     }
@@ -76,9 +86,9 @@ export default function UsersPage() {
   const columns = useMemo(() => getUserColumns({
     onView: handleViewUser,
     onEdit: (user) => handleOpenEditModal(user),
-    onArchive: (user) => handleArchiveUser(user),
     onDelete: (user) => handleDeleteUser(user),
-  }), [handleViewUser, handleOpenEditModal, handleArchiveUser, handleDeleteUser]);
+    tab: activeTab,
+  }), [handleViewUser, handleOpenEditModal, handleDeleteUser, activeTab]);
 
   return (
     <div className="h-full flex flex-col space-y-4 overflow-hidden">
@@ -106,10 +116,12 @@ export default function UsersPage() {
           onTabChange={(val) => {
             setActiveTab(val);
             setPage(1);
+            setSearch('');
           }}
           tabs={[
-            { label: "Active Users", value: "active" },
-            { label: "Archived", value: "archived" }
+            { label: "Active", value: "active" },
+            { label: "Deactivated", value: "deactivated" },
+            { label: "Invited", value: "invited" },
           ]}
         />
       </div>
@@ -156,7 +168,7 @@ export default function UsersPage() {
             name: selectedUser.name,
             email: selectedUser.email,
             role: selectedUser.role,
-            status: selectedUser.status
+            avatar: selectedUser.avatar
           } : undefined}
           onSubmit={handleFormSubmit}
           onCancel={() => {
@@ -172,7 +184,6 @@ export default function UsersPage() {
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
         onEdit={handleOpenEditModal}
-        onArchive={handleArchiveUser}
       />
     </div>
   );
