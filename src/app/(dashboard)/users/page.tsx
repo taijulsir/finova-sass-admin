@@ -176,7 +176,7 @@ export default function UsersPage() {
         title={isEditModalOpen ? "Edit User" : "Invite User"}
         description={
           isEditModalOpen
-            ? "Update user account details and designation."
+            ? "Update user account details."
             : "Send an invitation email. The invitee will receive a link to complete their registration."
         }
         isOpen={isAddModalOpen || isEditModalOpen}
@@ -191,7 +191,6 @@ export default function UsersPage() {
           defaultValues={selectedUser ? {
             name: selectedUser.name,
             email: selectedUser.email,
-            role: selectedUser.role,
             avatar: selectedUser.avatar,
           } : undefined}
           onSubmit={handleFormSubmit}

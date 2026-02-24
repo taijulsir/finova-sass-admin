@@ -14,7 +14,6 @@ export const userSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
   // Email is required for invite (new user) — optional only when editing an existing user
   email: z.string().email("Invalid email address").optional(),
-  role: z.string().min(1, "Role is required"),
   avatar: z.union([z.instanceof(File), z.string()]).optional().nullable(),
   isInvite: z.boolean().optional(),
 });
@@ -42,7 +41,6 @@ export function UserForm({
   const formattedDefaultValues: UserFormValues = {
     name: defaultValues?.name ?? "",
     email: defaultValues?.email ?? "",
-    role: defaultValues?.role?.toUpperCase() ?? "USER",
     avatar: defaultValues?.avatar ?? null,
     isInvite: isEdit ? defaultValues?.isInvite : true,
   };
@@ -101,26 +99,24 @@ export function UserForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <div className="space-y-6 py-4">
-          {/* Avatar — only shown when editing; no avatar upload for invites */}
-          {isEdit && (
-            <div className="flex justify-center">
-              <Controller
-                control={form.control}
-                name="avatar"
-                render={({ field }) => (
-                  <ImageUploader
-                    value={field.value}
-                    onChange={field.onChange}
-                    shape="circle"
-                    folder="users"
-                    width={200}
-                    height={200}
-                    label="Profile Picture"
-                  />
-                )}
-              />
-            </div>
-          )}
+          {/* Avatar — shown for both invite and edit */}
+          <div className="flex justify-center">
+            <Controller
+              control={form.control}
+              name="avatar"
+              render={({ field }) => (
+                <ImageUploader
+                  value={field.value}
+                  onChange={field.onChange}
+                  shape="circle"
+                  folder="users"
+                  width={200}
+                  height={200}
+                  label="Profile Picture"
+                />
+              )}
+            />
+          </div>
 
           {/* Invite banner */}
           {!isEdit && (
@@ -172,20 +168,6 @@ export function UserForm({
                 </div>
               </div>
             )}
-
-            <SelectInput
-              control={form.control}
-              name="role"
-              label="Role"
-              placeholder="Select role"
-              options={[
-                { label: "Admin", value: "ADMIN" },
-                { label: "User", value: "USER" },
-                { label: "Member", value: "MEMBER" },
-                { label: "Support", value: "SUPPORT" },
-              ]}
-              disabled={isSubmitting}
-            />
 
           </div>
         </div>
