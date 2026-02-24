@@ -24,7 +24,7 @@ function permissionSummary(permissions: { module: string; actions: string[] }[])
 
   return (
     <div className="flex flex-wrap gap-1">
-      {permissions.slice(0, 3).map((p) => {
+      {(Array.isArray(permissions) ? permissions : []).slice(0, 3).map((p) => {
         const mod = ADMIN_MODULES.find((m) => m.key === p.module);
         return (
           <Badge key={p.module} variant="outline" className="text-[10px] bg-primary/5 border-primary/20 text-primary">

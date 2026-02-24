@@ -19,7 +19,7 @@ export const useAuditHandlers = (refresh?: () => void) => {
     try {
       // CSV conversion
       const headers = ['Action', 'User Name', 'User Email', 'Resource', 'Timestamp', 'Metadata'];
-      const rows = data.map(log => [
+      const rows = (Array.isArray(data) ? data : []).map(log => [
         log.action,
         log.userId?.name || 'System',
         log.userId?.email || 'N/A',

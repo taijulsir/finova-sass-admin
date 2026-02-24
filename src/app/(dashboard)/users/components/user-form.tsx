@@ -186,7 +186,7 @@ export function UserForm({
                 placeholder="Select designation"
                 options={[
                   { label: "None", value: "" },
-                  ...designations.map((d) => ({ label: d.name, value: d._id })),
+                  ...(Array.isArray(designations) ? designations : []).map((d) => ({ label: d.name, value: d._id })),
                 ]}
                 disabled={isSubmitting}
               />

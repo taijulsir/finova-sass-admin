@@ -42,18 +42,18 @@ const NAV_ITEMS: { title: string; url: string; icon: React.ElementType; module?:
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { canView, isSuperAdmin } = usePermission();
-  const user = useAuthStore((s) => s.user);
+  const { canViewModule } = usePermission();
+  const { user, platformRoles } = useAuthStore((s) => ({ user: s.user, platformRoles: s.platformRoles }));
 
-  // Filter nav items based on permissions (super admin sees everything)
+  // Filter nav items based on platform permissions
   const visibleItems = NAV_ITEMS.filter((item) =>
-    !item.module || canView(item.module)
+    !item.module || canViewModule(item.module)
   );
 
   // Display name / initials
   const displayName = user?.name ?? "Admin";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
-  const roleLabel = isSuperAdmin ? "Super Admin" : (user?.designation?.name ?? user?.globalRole ?? "Admin");
+  const roleLabel = platformRoles?.[0] ?? user?.globalRole ?? "Admin";
 
   return (
     <Sidebar collapsible="icon" className="border-r border-muted bg-card">

@@ -26,6 +26,7 @@ export default function LoginPage() {
   const setToken = useAuthStore((state) => state.setToken);
   const setUser = useAuthStore((state) => state.setUser);
   const setPermissions = useAuthStore((state) => state.setPermissions);
+  const setPlatformRoles = useAuthStore((state) => state.setPlatformRoles);
   
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +52,8 @@ export default function LoginPage() {
       if (response.success) {
         setToken(response.data.accessToken);
         setUser(response.data.user);
-        setPermissions(response.data.user?.permissions ?? null);
+        setPermissions(response.data.user?.permissions ?? []);
+        setPlatformRoles(response.data.user?.platformRoles ?? []);
         router.push('/');
       } else {
         setError(response.message || 'Login failed');
