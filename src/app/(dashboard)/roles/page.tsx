@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { AdminService } from '@/services/admin.service';
-import { Plus, ShieldCheck, Pencil, Trash2 } from 'lucide-react';
+import { Plus, ShieldCheck, Pencil, Trash2, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { toast } from 'sonner';
 import { Pagination } from '@/components/ui-system/pagination';
@@ -51,6 +51,11 @@ export default function RolesPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleteUserCount, setDeleteUserCount] = useState<number>(0);
+  const [isLoadingCount, setIsLoadingCount] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchParams = useMemo(
     () => ({ page, limit, search }),
@@ -93,15 +98,34 @@ export default function RolesPage() {
   }, [selected, refresh]);
 
   const handleArchive = useCallback(async (item: any) => {
-    if (!confirm(`Archive role "${item.name}"?`)) return;
+    setDeleteTarget(item);
+    setIsDeleteOpen(true);
+    setIsLoadingCount(true);
     try {
-      await AdminService.archiveRole(item._id);
+      const result = await AdminService.getRoleUserCount(item._id);
+      setDeleteUserCount(result.userCount);
+    } catch {
+      setDeleteUserCount(0);
+    } finally {
+      setIsLoadingCount(false);
+    }
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await AdminService.archiveRole(deleteTarget._id);
       toast.success('Role archived');
+      setIsDeleteOpen(false);
+      setDeleteTarget(null);
       refresh();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to archive');
+      toast.error(err?.response?.data?.message ?? 'Failed to archive role');
+    } finally {
+      setIsDeleting(false);
     }
-  }, [refresh]);
+  }, [deleteTarget, refresh]);
 
   const columns = useMemo(() => [
     {
@@ -196,7 +220,7 @@ export default function RolesPage() {
       </div>
 
       <div className="flex-1 overflow-hidden px-6">
-        <DataTable columns={columns as any} data={roles} loading={loading} />
+        <DataTable columns={columns as any} data={roles} loading={loading} onRowClick={(row)=>{setSelected(row);setIsEditOpen(true)}} />
       </div>
 
       <div className="px-6 pb-6 pt-2 border-t mt-auto shrink-0 bg-background/80 backdrop-blur-sm z-20">
@@ -247,6 +271,59 @@ export default function RolesPage() {
             isSubmitting={isSubmitting}
           />
         )}
+      </Modal>
+
+      {/* Delete / Archive Modal */}
+      <Modal
+        title="Archive Role"
+        description={`Are you sure you want to archive "${deleteTarget?.name}"? This action cannot be undone.`}
+        isOpen={isDeleteOpen}
+        onClose={() => { if (!isDeleting) { setIsDeleteOpen(false); setDeleteTarget(null); } }}
+      >
+        <div className="space-y-4 py-2">
+          {isLoadingCount ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : deleteUserCount > 0 ? (
+            <div className="flex items-start gap-3 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 px-4 py-3">
+              <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-orange-800 dark:text-orange-300">
+                  {deleteUserCount} user{deleteUserCount !== 1 ? 's' : ''} currently assigned
+                </p>
+                <p className="text-sm text-orange-700 dark:text-orange-400">
+                  Archiving this role will remove the role assignment from all {deleteUserCount} user{deleteUserCount !== 1 ? 's' : ''}. They will lose the permissions granted by this role immediately.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900 px-4 py-3">
+              <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+              <p className="text-sm text-green-700 dark:text-green-400">
+                No users are currently assigned to this role. Safe to archive.
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsDeleteOpen(false); setDeleteTarget(null); }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting || isLoadingCount}
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Archive Role
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

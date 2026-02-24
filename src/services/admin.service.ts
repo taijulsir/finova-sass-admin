@@ -105,6 +105,10 @@ export const AdminService = {
     const { data } = await api.get('/admin/roles/all');
     return data;
   },
+  getRoleUserCount: async (id: string) => {
+    const { data } = await api.get(`/admin/roles/${id}/user-count`);
+    return data.data as { userCount: number; roleName: string };
+  },
   createRole: async (payload: any) => {
     const { data } = await api.post('/admin/roles', payload);
     return data;
