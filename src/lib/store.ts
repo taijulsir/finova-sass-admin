@@ -1,16 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { PermissionMap } from './permissions';
 
 interface AuthState {
   token: string | null;
-  refreshToken: string | null;
-  user: any | null; // Replace any with proper User type
+  user: any | null;
+  /** Flat permission map populated from designation on login: { USERS: ['VIEW','CREATE'], ... } */
+  permissions: PermissionMap | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   
   setToken: (token: string | null) => void;
-  setRefreshToken: (token: string | null) => void;
   setUser: (user: any) => void;
+  setPermissions: (permissions: PermissionMap | null) => void;
   logout: () => void;
 }
 
@@ -18,19 +20,24 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
-      refreshToken: null,
-      user: null, // Initial state
+      user: null,
+      permissions: null,
       isAuthenticated: false,
-      isLoading: true, // Start loading
+      isLoading: true,
 
       setToken: (token) => set({ token, isAuthenticated: !!token }),
-      setRefreshToken: (refreshToken) => set({ refreshToken }),
       setUser: (user) => set({ user }),
-      logout: () => set({ token: null, refreshToken: null, user: null, isAuthenticated: false }),
+      setPermissions: (permissions) => set({ permissions }),
+      logout: () => set({ token: null, user: null, permissions: null, isAuthenticated: false }),
     }),
     {
-      name: 'auth-storage', // name of the item in the storage (must be unique)
-      partialize: (state) => ({ token: state.token, refreshToken: state.refreshToken, user: state.user, isAuthenticated: state.isAuthenticated }),
+      name: 'auth-storage',
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        permissions: state.permissions,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );
