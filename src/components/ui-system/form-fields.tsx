@@ -45,6 +45,7 @@ export function ShortTextInput<T extends FieldValues>({
           <FormControl>
             <Input
               {...field}
+              value={field.value ?? ''}
               type={type}
               placeholder={placeholder}
               disabled={disabled}
@@ -74,6 +75,7 @@ export function LongTextInput<T extends FieldValues>({
           <FormControl>
             <Textarea
               {...field}
+              value={field.value ?? ''}
               placeholder={placeholder}
               disabled={disabled}
               className="resize-none"

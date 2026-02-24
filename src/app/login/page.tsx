@@ -24,8 +24,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const setToken = useAuthStore((state) => state.setToken);
-  const setRefreshToken = useAuthStore((state) => state.setRefreshToken);
   const setUser = useAuthStore((state) => state.setUser);
+  const setPermissions = useAuthStore((state) => state.setPermissions);
   
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -49,9 +49,9 @@ export default function LoginPage() {
       const response = await AuthService.login(data);
       
       if (response.success) {
-        setToken(response.data.tokens.accessToken);
-        setRefreshToken(response.data.tokens.refreshToken);
+        setToken(response.data.accessToken);
         setUser(response.data.user);
+        setPermissions(response.data.user?.permissions ?? null);
         router.push('/');
       } else {
         setError(response.message || 'Login failed');

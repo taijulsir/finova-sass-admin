@@ -15,6 +15,9 @@ import { getUserColumns } from "./user-utils";
 import { useUserHandlers } from "./user-helpers";
 import { useFetchData } from "@/hooks/use-fetch-data";
 import { resolveAvatar } from "@/components/ui/image-uploader/image-uploader";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 export default function UsersPage() {
   const [search, setSearch] = useState('');
@@ -22,6 +25,8 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [suspendNote, setSuspendNote] = useState('');
+  const [isSuspending, setIsSuspending] = useState(false);
 
   const fetchParams = useMemo(() => ({
     page,
@@ -45,22 +50,35 @@ export default function UsersPage() {
     setIsEditModalOpen,
     isViewModalOpen,
     setIsViewModalOpen,
+    isSuspendModalOpen,
+    setIsSuspendModalOpen,
     selectedUser,
     handleOpenAddModal,
     handleOpenEditModal,
     handleViewUser,
+    handleOpenSuspendModal,
+    handleConfirmSuspend,
     handleDeleteUser
   } = useUserHandlers(refresh);
 
   const handleFormSubmit = async (data: UserFormValues) => {
     setIsSubmitting(true);
+    let uploadedAvatarUrl: string | null = null;
     try {
       // Upload the image only NOW (on submit) if a File was picked
       const avatarUrl = await resolveAvatar(data.avatar, "users", 200, 200);
+      // Track the URL so we can roll back if the API call fails
+      if (avatarUrl && data.avatar instanceof File) {
+        uploadedAvatarUrl = avatarUrl;
+      }
       const payload = { ...data, avatar: avatarUrl };
 
       if (isEditModalOpen && selectedUser) {
         await AdminService.updateUser(selectedUser._id, payload);
+        // Assign designation separately if it changed
+        if (data.designationId !== undefined) {
+          await AdminService.assignDesignation(selectedUser._id, data.designationId || null);
+        }
         toast.success("User updated successfully");
       } else {
         if (data.isInvite) {
@@ -76,6 +94,10 @@ export default function UsersPage() {
       setIsEditModalOpen(false);
       refresh();
     } catch (error: any) {
+      // ── Rollback: delete the just-uploaded image so storage isn't polluted ──
+      if (uploadedAvatarUrl) {
+        AdminService.deleteUploadedImage(uploadedAvatarUrl).catch(() => {});
+      }
       console.error(error);
       toast.error(error?.response?.data?.message || error?.message || `Failed to ${isEditModalOpen ? 'update' : 'create'} user`);
     } finally {
@@ -87,8 +109,9 @@ export default function UsersPage() {
     onView: handleViewUser,
     onEdit: (user) => handleOpenEditModal(user),
     onDelete: (user) => handleDeleteUser(user),
+    onSuspend: (user) => { setSuspendNote(''); handleOpenSuspendModal(user); },
     tab: activeTab,
-  }), [handleViewUser, handleOpenEditModal, handleDeleteUser, activeTab]);
+  }), [handleViewUser, handleOpenEditModal, handleDeleteUser, handleOpenSuspendModal, activeTab]);
 
   return (
     <div className="h-full flex flex-col space-y-4 overflow-hidden">
@@ -120,7 +143,8 @@ export default function UsersPage() {
           }}
           tabs={[
             { label: "Active", value: "active" },
-            { label: "Deactivated", value: "deactivated" },
+            { label: "Suspended", value: "suspended" },
+            { label: "Archived", value: "archived" },
             { label: "Invited", value: "invited" },
           ]}
         />
@@ -168,7 +192,8 @@ export default function UsersPage() {
             name: selectedUser.name,
             email: selectedUser.email,
             role: selectedUser.role,
-            avatar: selectedUser.avatar
+            avatar: selectedUser.avatar,
+            designationId: selectedUser.designationId ?? null,
           } : undefined}
           onSubmit={handleFormSubmit}
           onCancel={() => {
@@ -185,6 +210,48 @@ export default function UsersPage() {
         onClose={() => setIsViewModalOpen(false)}
         onEdit={handleOpenEditModal}
       />
+
+      {/* Suspend User Modal */}
+      <Modal
+        title="Suspend User"
+        description={`Suspend ${selectedUser?.name || 'this user'}. They will not be able to log in until restored.`}
+        isOpen={isSuspendModalOpen}
+        onClose={() => setIsSuspendModalOpen(false)}
+      >
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="suspend-note">Reason for suspension <span className="text-destructive">*</span></Label>
+            <Textarea
+              id="suspend-note"
+              placeholder="Describe why this user is being suspended..."
+              value={suspendNote}
+              onChange={(e) => setSuspendNote(e.target.value)}
+              rows={3}
+              disabled={isSuspending}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsSuspendModalOpen(false)}
+              disabled={isSuspending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!suspendNote.trim() || isSuspending}
+              onClick={async () => {
+                setIsSuspending(true);
+                await handleConfirmSuspend(suspendNote.trim());
+                setIsSuspending(false);
+              }}
+            >
+              {isSuspending ? "Suspending..." : "Confirm Suspend"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
