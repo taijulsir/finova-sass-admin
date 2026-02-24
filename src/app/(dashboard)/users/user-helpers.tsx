@@ -2,13 +2,13 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import axios from "axios";
 import { AdminService } from "@/services/admin.service";
 
 export const useUserHandlers = (refreshData: () => void) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const handleOpenAddModal = useCallback(() => {
@@ -19,7 +19,6 @@ export const useUserHandlers = (refreshData: () => void) => {
   const handleOpenEditModal = useCallback((user: any) => {
     setSelectedUser(user);
     setIsEditModalOpen(true);
-    // Close view modal if it was open
     setIsViewModalOpen(false);
   }, []);
 
@@ -28,18 +27,42 @@ export const useUserHandlers = (refreshData: () => void) => {
     setIsViewModalOpen(true);
   }, []);
 
-  const handleDeleteUser = useCallback(async (user: any) => {
-    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
-    
+  const handleOpenSuspendModal = useCallback((user: any) => {
+    setSelectedUser(user);
+    setIsSuspendModalOpen(true);
+    setIsViewModalOpen(false);
+  }, []);
+
+  const handleConfirmSuspend = useCallback(async (note: string) => {
+    if (!selectedUser) return;
     try {
-      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${user._id}`, {
-        withCredentials: true
-      });
-      
-      toast.success("User deleted successfully");
+      await AdminService.suspenseUser(selectedUser._id, note);
+      toast.success("User suspended successfully");
+      setIsSuspendModalOpen(false);
+      setSelectedUser(null);
       refreshData();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to delete user");
+      toast.error(error.response?.data?.message || "Failed to suspend user");
+    }
+  }, [selectedUser, refreshData]);
+
+  const handleDeleteUser = useCallback(async (user: any) => {
+    const isInvitation = user._type === 'invitation';
+    const action = isInvitation ? "cancel the invitation" : "archive this user";
+    
+    if (!confirm(`Are you sure you want to ${action}?`)) return;
+    
+    try {
+      if (isInvitation) {
+        await AdminService.deleteUser(user._id);
+      } else {
+        await AdminService.archiveUser(user._id);
+      }
+      
+      toast.success(`${isInvitation ? 'Invitation cancelled' : 'User archived'} successfully`);
+      refreshData();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || `Failed to ${isInvitation ? 'cancel invitation' : 'archive user'}`);
     }
   }, [refreshData]);
 
@@ -50,10 +73,14 @@ export const useUserHandlers = (refreshData: () => void) => {
     setIsEditModalOpen,
     isViewModalOpen,
     setIsViewModalOpen,
+    isSuspendModalOpen,
+    setIsSuspendModalOpen,
     selectedUser,
     handleOpenAddModal,
     handleOpenEditModal,
     handleViewUser,
-    handleDeleteUser
+    handleOpenSuspendModal,
+    handleConfirmSuspend,
+    handleDeleteUser,
   };
 };

@@ -1,9 +1,10 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { TableActionDropdown } from "@/components/ui-system/table-action-dropdown";
-import { TbEye, TbEdit, TbTrash, TbMailForward } from "react-icons/tb";
+import { TbEdit, TbTrash, TbMailForward, TbArchive, TbPlayerPause } from "react-icons/tb";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export type User = {
   _id: string;
@@ -17,6 +18,8 @@ export type User = {
   invitedBy?: { name: string; email: string };
   _type?: 'invitation' | 'user';
   organizationId?: { name: string };
+  isActive: boolean;
+  status?: string;
 };
 
 export interface Column<T> {
@@ -30,6 +33,7 @@ export interface UserColumnsProps {
   onView: (user: User) => void;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
+  onSuspend?: (user: User) => void;
   tab?: string;
 }
 
@@ -37,6 +41,7 @@ export const getUserColumns = ({
   onView,
   onEdit,
   onDelete,
+  onSuspend,
   tab = 'active',
 }: UserColumnsProps): Column<User>[] => {
   // ── Invited tab columns ──────────────────────────────────────────────────
@@ -102,21 +107,31 @@ export const getUserColumns = ({
       {
         accessorKey: "actions",
         header: "Actions",
+        className: "text-right",
         cell: (row) => (
-          <TableActionDropdown actions={[
-            {
-              label: "Delete Invitation",
-              icon: TbTrash,
-              onClick: () => onDelete(row),
-              variant: "destructive" as const,
-            },
-          ]} />
+          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => onDelete(row)}
+                  >
+                    <TbTrash className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Cancel Invitation</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         ),
       },
     ];
   }
 
-  // ── Active / Deactivated tab columns ────────────────────────────────────
+  // ── User tab columns (Active, Archvied, Suspended) ───────────────────────
   return [
     {
       accessorKey: "name",
@@ -154,7 +169,7 @@ export const getUserColumns = ({
     },
     {
       accessorKey: "createdAt",
-      header: "Joined At",
+      header: "Created At",
       cell: (user) => (
         <span className="text-sm text-muted-foreground tabular-nums">
           {new Date(user.createdAt).toLocaleDateString()}
@@ -164,12 +179,58 @@ export const getUserColumns = ({
     {
       accessorKey: "actions",
       header: "Actions",
-      cell: (user) => (
-        <TableActionDropdown actions={[
-          { label: "View Details", icon: TbEye, onClick: () => onView(user) },
-          { label: "Edit User", icon: TbEdit, onClick: () => onEdit(user) },
-          { label: "Delete Permanently", icon: TbTrash, onClick: () => onDelete(user), variant: "destructive" as const },
-        ]} />
+      className: "text-right",
+      cell: (row) => (
+        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                  onClick={() => onEdit(row)}
+                >
+                  <TbEdit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Edit User</TooltipContent>
+            </Tooltip>
+
+            {/* Suspend — only on active tab for active users */}
+            {tab === 'active' && row.status !== 'suspended' && onSuspend && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-amber-600"
+                    onClick={() => onSuspend(row)}
+                  >
+                    <TbPlayerPause className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Suspend User</TooltipContent>
+              </Tooltip>
+            )}
+
+            {row.isActive && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={() => onDelete(row)}
+                  >
+                    <TbArchive className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Archive User</TooltipContent>
+              </Tooltip>
+            )}
+          </TooltipProvider>
+        </div>
       ),
     },
   ];
