@@ -98,23 +98,23 @@ export const AdminService = {
 
   // ── Roles ─────────────────────────────────────────────────────────────────
   getRoles: async (params: any = { page: 1, limit: 50 }) => {
-    const { data } = await api.get('/admin/designations', { params });
+    const { data } = await api.get('/admin/roles', { params });
     return data;
   },
   getAllRoles: async () => {
-    const { data } = await api.get('/admin/designations/all');
+    const { data } = await api.get('/admin/roles/all');
     return data;
   },
   createRole: async (payload: any) => {
-    const { data } = await api.post('/admin/designations', payload);
+    const { data } = await api.post('/admin/roles', payload);
     return data;
   },
   updateRole: async (id: string, payload: any) => {
-    const { data } = await api.patch(`/admin/designations/${id}`, payload);
+    const { data } = await api.patch(`/admin/roles/${id}`, payload);
     return data;
   },
   archiveRole: async (id: string) => {
-    const { data } = await api.delete(`/admin/designations/${id}`);
+    const { data } = await api.delete(`/admin/roles/${id}`);
     return data;
   },
 }
