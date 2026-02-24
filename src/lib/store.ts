@@ -9,12 +9,16 @@ interface AuthState {
   /** Platform role names assigned to the user: ['SUPER_ADMIN'] */
   platformRoles: string[];
   isAuthenticated: boolean;
+  /** True once zustand/persist has rehydrated from localStorage */
+  _hasHydrated: boolean;
+  /** True while the /auth/me session check is in flight */
   isLoading: boolean;
 
   setToken: (token: string | null) => void;
   setUser: (user: any) => void;
   setPermissions: (permissions: string[]) => void;
   setPlatformRoles: (roles: string[]) => void;
+  setHasHydrated: (value: boolean) => void;
   logout: () => void;
 }
 
@@ -26,16 +30,26 @@ export const useAuthStore = create<AuthState>()(
       permissions: [],
       platformRoles: [],
       isAuthenticated: false,
-      isLoading: false,
+      _hasHydrated: false,
+      isLoading: true,
 
       setToken: (token) => set({ token, isAuthenticated: !!token }),
       setUser: (user) => set({ user }),
       setPermissions: (permissions) => set({ permissions }),
       setPlatformRoles: (platformRoles) => set({ platformRoles }),
-      logout: () => set({ token: null, user: null, permissions: [], platformRoles: [], isAuthenticated: false }),
+      setHasHydrated: (value) => set({ _hasHydrated: value }),
+      logout: () => set({
+        token: null,
+        user: null,
+        permissions: [],
+        platformRoles: [],
+        isAuthenticated: false,
+        isLoading: false,
+      }),
     }),
     {
       name: 'auth-storage',
+      // Do NOT persist loading/hydration flags — they are runtime-only
       partialize: (state) => ({
         token: state.token,
         user: state.user,
@@ -43,6 +57,10 @@ export const useAuthStore = create<AuthState>()(
         platformRoles: state.platformRoles,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Called once localStorage data has been merged into the store
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

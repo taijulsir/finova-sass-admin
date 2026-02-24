@@ -5,15 +5,25 @@ import { useAuthStore } from '../../lib/store';
 import api from '../../lib/api';
 import { Loader2 } from "lucide-react";
 
+const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password'];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { setUser, logout, isAuthenticated, isLoading } = useAuthStore();
-  
+
+  const _hasHydrated  = useAuthStore((s) => s._hasHydrated);
+  const isLoading     = useAuthStore((s) => s.isLoading);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const setUser       = useAuthStore((s) => s.setUser);
+  const logout        = useAuthStore((s) => s.logout);
+
+  // Step 1: Once zustand/persist has rehydrated from localStorage, validate the session
   useEffect(() => {
+    if (!_hasHydrated) return;
+
     const checkAuth = async () => {
       const token = useAuthStore.getState().token;
-      
+
       if (!token) {
         useAuthStore.setState({ isAuthenticated: false, isLoading: false });
         return;
@@ -21,43 +31,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const { data } = await api.get('/auth/me');
-        
-        if (data.success && data.data.user) {
-            setUser(data.data.user);
-            useAuthStore.setState({ isAuthenticated: true, isLoading: false }); 
-        } else {
-             setUser(data.data || data);
-             useAuthStore.setState({ isAuthenticated: true, isLoading: false });
+        if (data.success && data.data?.user) {
+          setUser(data.data.user);
+        } else if (data.data) {
+          setUser(data.data);
         }
-      } catch (error) {
+        useAuthStore.setState({ isAuthenticated: true, isLoading: false });
+      } catch {
         logout();
         useAuthStore.setState({ isAuthenticated: false, isLoading: false });
       }
     };
 
     checkAuth();
-  }, [setUser, logout]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_hasHydrated]);
 
+  // Step 2: Once loading is done, handle route protection
   useEffect(() => {
-    const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
-    
-    if (!isLoading) {
-      if (!isAuthenticated && !publicRoutes.includes(pathname)) {
-        router.push('/login');
-      } else if (isAuthenticated && publicRoutes.includes(pathname)) {
-        router.push('/');
-      }
+    if (isLoading) return;
+
+    if (!isAuthenticated && !PUBLIC_ROUTES.includes(pathname)) {
+      router.replace('/login');
+    } else if (isAuthenticated && PUBLIC_ROUTES.includes(pathname)) {
+      router.replace('/');
     }
   }, [isLoading, isAuthenticated, pathname, router]);
 
-  // Only show the global centered loader if we don't even have a persisted session hint
-  const token = useAuthStore.getState().token;
-  if (isLoading && !token) {
+  // Block ALL rendering until:
+  //   a) zustand has rehydrated from localStorage (_hasHydrated), AND
+  //   b) the /auth/me session check has finished (!isLoading)
+  // This eliminates the flash of login UI on page refresh.
+  if (!_hasHydrated || isLoading) {
     return (
-      <div className="flex flex-col h-screen w-full items-center justify-center bg-background animate-in fade-in duration-500">
-        <Loader2 className="h-10 w-10 animate-spin text-primary opacity-80" />
-        <p className="mt-4 text-sm font-medium text-muted-foreground animate-pulse">
-          Initializing session...
+      <div className="flex flex-col h-screen w-full items-center justify-center bg-background">
+        <div className="relative flex items-center justify-center">
+          <div className="absolute h-16 w-16 rounded-full border-4 border-primary/10" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <p className="mt-5 text-sm font-medium text-muted-foreground animate-pulse tracking-wide">
+          Loading session...
         </p>
       </div>
     );
@@ -65,3 +78,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
+
