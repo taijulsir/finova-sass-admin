@@ -47,6 +47,10 @@ export const AdminService = {
     const { data } = await api.post(`/admin/users/${invitationId}/resend-invite`);
     return data;
   },
+  cancelInvitation: async (invitationId: string) => {
+    const { data } = await api.delete(`/admin/users/${invitationId}/cancel-invite`);
+    return data;
+  },
   suspenseUser: async (userId: string, note: string) => {
     const { data } = await api.patch(`/admin/users/${userId}/suspense`, { note });
     return data;

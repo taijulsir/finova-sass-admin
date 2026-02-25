@@ -68,7 +68,7 @@ export const useUserHandlers = (refreshData: () => void) => {
 
   const handleCancelInvite = useCallback(async (user: any) => {
     try {
-      await AdminService.deleteUser(user._id);
+      await AdminService.cancelInvitation(user._id);
       toast.success('Invitation cancelled successfully');
       refreshData();
     } catch (error: any) {
