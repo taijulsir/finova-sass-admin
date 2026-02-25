@@ -29,6 +29,19 @@ export const PLATFORM_PERMISSIONS = {
   DESIGNATION_CREATE:  'DESIGNATION_CREATE',
   DESIGNATION_EDIT:    'DESIGNATION_EDIT',
   DESIGNATION_ARCHIVE: 'DESIGNATION_ARCHIVE',
+  // Coupons
+  COUPON_VIEW:   'COUPON_VIEW',
+  COUPON_CREATE: 'COUPON_CREATE',
+  COUPON_EDIT:   'COUPON_EDIT',
+  COUPON_DELETE: 'COUPON_DELETE',
+  // Feature Flags
+  FEATURE_FLAG_VIEW:   'FEATURE_FLAG_VIEW',
+  FEATURE_FLAG_TOGGLE: 'FEATURE_FLAG_TOGGLE',
+  // Support Tickets
+  SUPPORT_VIEW:   'SUPPORT_VIEW',
+  SUPPORT_MANAGE: 'SUPPORT_MANAGE',
+  // Feedback
+  FEEDBACK_VIEW: 'FEEDBACK_VIEW',
 } as const;
 
 export type PlatformPermissionKey = typeof PLATFORM_PERMISSIONS[keyof typeof PLATFORM_PERMISSIONS];
@@ -36,13 +49,17 @@ export type PlatformPermissionKey = typeof PLATFORM_PERMISSIONS[keyof typeof PLA
 /** Sidebar module → required view permission mapping.
  *  A missing key means the item is always visible (no permission gate). */
 export const MODULE_PERMISSION_MAP: Record<string, PlatformPermissionKey> = {
-  ORGANIZATIONS: PLATFORM_PERMISSIONS.ORG_VIEW,
-  SUBSCRIPTIONS: PLATFORM_PERMISSIONS.SUBSCRIPTION_VIEW,
-  PLANS:         PLATFORM_PERMISSIONS.PLAN_VIEW,
-  USERS:         PLATFORM_PERMISSIONS.ADMIN_VIEW,
-  ROLES:         PLATFORM_PERMISSIONS.DESIGNATION_VIEW,
-  AUDIT:         PLATFORM_PERMISSIONS.AUDIT_VIEW,
-  ANALYTICS:     PLATFORM_PERMISSIONS.ANALYTICS_VIEW,
+  ORGANIZATIONS:  PLATFORM_PERMISSIONS.ORG_VIEW,
+  SUBSCRIPTIONS:  PLATFORM_PERMISSIONS.SUBSCRIPTION_VIEW,
+  PLANS:          PLATFORM_PERMISSIONS.PLAN_VIEW,
+  USERS:          PLATFORM_PERMISSIONS.ADMIN_VIEW,
+  ROLES:          PLATFORM_PERMISSIONS.DESIGNATION_VIEW,
+  AUDIT:          PLATFORM_PERMISSIONS.AUDIT_VIEW,
+  ANALYTICS:      PLATFORM_PERMISSIONS.ANALYTICS_VIEW,
+  COUPONS:        PLATFORM_PERMISSIONS.COUPON_VIEW,
+  FEATURE_FLAGS:  PLATFORM_PERMISSIONS.FEATURE_FLAG_VIEW,
+  SUPPORT:        PLATFORM_PERMISSIONS.SUPPORT_VIEW,
+  FEEDBACK:       PLATFORM_PERMISSIONS.FEEDBACK_VIEW,
   // DASHBOARD and SETTINGS have no gate — always visible to authenticated admins
 };
 
@@ -53,8 +70,12 @@ export const ADMIN_MODULES = [
   { key: 'PLANS',          label: 'Plans' },
   { key: 'USERS',          label: 'Users' },
   { key: 'ROLES',          label: 'Roles & Permissions' },
-  { key: 'AUDIT',          label: 'Audit Logs' },
   { key: 'ANALYTICS',      label: 'Analytics' },
+  { key: 'AUDIT',          label: 'Audit Logs' },
+  { key: 'COUPONS',        label: 'Coupons' },
+  { key: 'FEATURE_FLAGS',  label: 'Feature Flags' },
+  { key: 'SUPPORT',        label: 'Support Tickets' },
+  { key: 'FEEDBACK',       label: 'Feedback' },
   { key: 'SETTINGS',       label: 'Settings' },
 ] as const;
 
@@ -69,4 +90,3 @@ export type ModuleKey = typeof ADMIN_MODULES[number]['key'];
 export type ActionKey = typeof ADMIN_ACTIONS[number]['key'];
 /** @deprecated use string[] from PLATFORM_PERMISSIONS */
 export type PermissionMap = Partial<Record<ModuleKey, ActionKey[]>>;
-
