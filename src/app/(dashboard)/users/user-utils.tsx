@@ -1,7 +1,10 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { TbEdit, TbTrash, TbMailForward, TbArchive, TbPlayerPause, TbRefresh } from "react-icons/tb";
+import {
+  TbEdit, TbTrash, TbMailForward, TbArchive, TbRefresh,
+  TbForbid2, TbArchiveOff, TbShieldCheck,
+} from "react-icons/tb";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,6 +14,8 @@ export type User = {
   name: string;
   email: string;
   role: string;
+  globalRole?: string;
+  roles?: Array<{ _id: string; name: string; color?: string }>;
   avatar?: string;
   createdAt: string;
   inviteStatus?: string;
@@ -20,6 +25,9 @@ export type User = {
   organizationId?: { name: string };
   isActive: boolean;
   status?: string;
+  suspenseNote?: string;
+  suspensedAt?: string;
+  suspensedBy?: { name: string; email: string };
 };
 
 export interface Column<T> {
@@ -35,7 +43,50 @@ export interface UserColumnsProps {
   onDelete: (user: User) => void;
   onSuspend?: (user: User) => void;
   onResend?: (user: User) => void;
+  onArchive?: (user: User) => void;
+  onUnarchive?: (user: User) => void;
+  onAssignRoles?: (user: User) => void;
   tab?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Global-role badge colours
+// ─────────────────────────────────────────────────────────────────────────────
+const globalRoleStyle: Record<string, string> = {
+  SUPER_ADMIN: 'bg-red-50 text-red-700 border-red-200',
+  ADMIN:       'bg-blue-50 text-blue-700 border-blue-200',
+  SUPPORT:     'bg-purple-50 text-purple-700 border-purple-200',
+  USER:        'bg-gray-50 text-gray-600 border-gray-200',
+  MEMBER:      'bg-gray-50 text-gray-600 border-gray-200',
+};
+
+function GlobalRoleBadge({ role }: { role?: string }) {
+  if (!role) return <span className="text-muted-foreground text-sm">—</span>;
+  const cls = globalRoleStyle[role] ?? 'bg-muted text-muted-foreground border-muted';
+  return (
+    <Badge variant="outline" className={`capitalize text-xs ${cls}`}>
+      {role.replace('_', ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
+    </Badge>
+  );
+}
+
+function RolesPills({ roles }: { roles?: Array<{ _id: string; name: string }> }) {
+  if (!roles || roles.length === 0) {
+    return <span className="text-muted-foreground text-xs">No roles</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-1">
+      {roles.map((r) => (
+        <Badge
+          key={r._id}
+          variant="secondary"
+          className="text-[10px] px-1.5 py-0 h-5 bg-primary/10 text-primary border-primary/20"
+        >
+          {r.name}
+        </Badge>
+      ))}
+    </div>
+  );
 }
 
 export const getUserColumns = ({
@@ -44,6 +95,9 @@ export const getUserColumns = ({
   onDelete,
   onSuspend,
   onResend,
+  onArchive,
+  onUnarchive,
+  onAssignRoles,
   tab = 'active',
 }: UserColumnsProps): Column<User>[] => {
   // ── Invited tab columns ──────────────────────────────────────────────────
@@ -129,7 +183,7 @@ export const getUserColumns = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-primary"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary cursor-pointer"
                       onClick={() => onResend(row)}
                     >
                       <TbRefresh className="h-4 w-4" />
@@ -140,10 +194,10 @@ export const getUserColumns = ({
               )}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                     onClick={() => onDelete(row)}
                   >
                     <TbTrash className="h-4 w-4" />
@@ -158,7 +212,147 @@ export const getUserColumns = ({
     ];
   }
 
-  // ── User tab columns (Active, Archvied, Suspended) ───────────────────────
+  // ── Archived tab columns ─────────────────────────────────────────────────
+  if (tab === 'archived') {
+    return [
+      {
+        accessorKey: "name",
+        header: "User",
+        cell: (user) => (
+          <div className="flex items-center gap-3 opacity-60">
+            <Avatar className="h-9 w-9 border border-muted">
+              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarFallback className="bg-muted text-muted-foreground font-medium text-xs">
+                {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) || '?'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="font-medium text-foreground line-through decoration-muted-foreground/50">{user.name}</span>
+              <span className="text-xs text-muted-foreground">{user.email}</span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "globalRole",
+        header: "Global Role",
+        cell: (user) => <GlobalRoleBadge role={user.globalRole} />,
+      },
+      {
+        accessorKey: "roles",
+        header: "Roles",
+        cell: (user) => <RolesPills roles={user.roles} />,
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Archived At",
+        cell: (user) => (
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {new Date(user.createdAt).toLocaleDateString()}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "actions",
+        header: "Actions",
+        className: "text-right",
+        cell: (row) => (
+          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+            <TooltipProvider>
+              {onUnarchive && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-green-600 cursor-pointer"
+                      onClick={() => onUnarchive(row)}
+                    >
+                      <TbArchiveOff className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Unarchive User</TooltipContent>
+                </Tooltip>
+              )}
+            </TooltipProvider>
+          </div>
+        ),
+      },
+    ];
+  }
+
+  // ── Suspended tab columns ─────────────────────────────────────────────────
+  if (tab === 'suspended') {
+    return [
+      {
+        accessorKey: "name",
+        header: "User",
+        cell: (user) => (
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9 border border-red-200">
+              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarFallback className="bg-red-50 text-red-500 font-medium text-xs">
+                {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) || '?'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="font-medium text-foreground">{user.name}</span>
+              <span className="text-xs text-muted-foreground">{user.email}</span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "globalRole",
+        header: "Global Role",
+        cell: (user) => <GlobalRoleBadge role={user.globalRole} />,
+      },
+      {
+        accessorKey: "suspenseNote",
+        header: "Reason",
+        cell: (user) => (
+          <span className="text-sm text-muted-foreground line-clamp-1 max-w-[180px]">
+            {user.suspenseNote || '—'}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "suspensedAt",
+        header: "Suspended At",
+        cell: (user) => (
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {user.suspensedAt ? new Date(user.suspensedAt).toLocaleDateString() : '—'}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "actions",
+        header: "Actions",
+        className: "text-right",
+        cell: (row) => (
+          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-green-600 cursor-pointer"
+                    onClick={() => onDelete(row)}
+                  >
+                    <TbArchiveOff className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Restore User</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        ),
+      },
+    ];
+  }
+
+  // ── Active tab columns ───────────────────────────────────────────────────
   return [
     {
       accessorKey: "name",
@@ -179,13 +373,14 @@ export const getUserColumns = ({
       ),
     },
     {
-      accessorKey: "role",
-      header: "Role",
-      cell: (user) => (
-        <Badge variant="outline" className="capitalize bg-blue-50 text-blue-700 border-blue-200">
-          {user.role}
-        </Badge>
-      ),
+      accessorKey: "globalRole",
+      header: "Global Role",
+      cell: (user) => <GlobalRoleBadge role={user.globalRole} />,
+    },
+    {
+      accessorKey: "roles",
+      header: "Roles",
+      cell: (user) => <RolesPills roles={user.roles} />,
     },
     {
       accessorKey: "organizationId",
@@ -207,59 +402,79 @@ export const getUserColumns = ({
       accessorKey: "actions",
       header: "Actions",
       className: "text-right",
-      cell: (row) => (
-        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-muted-foreground hover:text-primary"
-                  onClick={() => onEdit(row)}
-                >
-                  <TbEdit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Edit User</TooltipContent>
-            </Tooltip>
-
-            {/* Suspend — only on active tab for active users */}
-            {tab === 'active' && row.status !== 'suspended' && onSuspend && (
+      cell: (row) => {
+        const isSuperAdmin = row.globalRole === 'SUPER_ADMIN';
+        return (
+          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+            <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-amber-600"
-                    onClick={() => onSuspend(row)}
+                    className="h-8 w-8 text-muted-foreground hover:text-primary cursor-pointer"
+                    onClick={() => onEdit(row)}
                   >
-                    <TbPlayerPause className="h-4 w-4" />
+                    <TbEdit className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Suspend User</TooltipContent>
+                <TooltipContent>Edit User</TooltipContent>
               </Tooltip>
-            )}
 
-            {row.isActive && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => onDelete(row)}
-                  >
-                    <TbArchive className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Archive User</TooltipContent>
-              </Tooltip>
-            )}
-          </TooltipProvider>
-        </div>
-      ),
+              {/* Assign Roles */}
+              {onAssignRoles && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary cursor-pointer"
+                      onClick={() => onAssignRoles(row)}
+                    >
+                      <TbShieldCheck className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Assign Roles</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Suspend — not for superadmin */}
+              {!isSuperAdmin && onSuspend && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-red-600 cursor-pointer"
+                      onClick={() => onSuspend(row)}
+                    >
+                      <TbForbid2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Suspend User</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Archive — not for superadmin */}
+              {!isSuperAdmin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive cursor-pointer"
+                      onClick={() => onArchive ? onArchive(row) : onDelete(row)}
+                    >
+                      <TbArchive className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Archive User</TooltipContent>
+                </Tooltip>
+              )}
+            </TooltipProvider>
+          </div>
+        );
+      },
     },
   ];
 };
-

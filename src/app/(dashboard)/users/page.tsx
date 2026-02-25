@@ -28,6 +28,16 @@ export default function UsersPage() {
   const [suspendNote, setSuspendNote] = useState('');
   const [isSuspending, setIsSuspending] = useState(false);
 
+  // ── Resend-invite confirmation modal ─────────────────────────────────────
+  const [isResendModalOpen, setIsResendModalOpen] = useState(false);
+  const [resendTarget, setResendTarget] = useState<any>(null);
+  const [isResending, setIsResending] = useState(false);
+
+  // ── Archive confirmation modal ────────────────────────────────────────────
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<any>(null);
+  const [isArchiving, setIsArchiving] = useState(false);
+
   const fetchParams = useMemo(() => ({
     page,
     limit,
@@ -65,9 +75,7 @@ export default function UsersPage() {
     setIsSubmitting(true);
     let uploadedAvatarUrl: string | null = null;
     try {
-      // Upload the image only NOW (on submit) if a File was picked
       const avatarUrl = await resolveAvatar(data.avatar, "users", 200, 200);
-      // Track the URL so we can roll back if the API call fails
       if (avatarUrl && data.avatar instanceof File) {
         uploadedAvatarUrl = avatarUrl;
       }
@@ -80,7 +88,7 @@ export default function UsersPage() {
         if (data.isInvite) {
           await AdminService.inviteUser(payload);
           toast.success("Invitation sent successfully");
-          setActiveTab('invited'); // ← auto-switch to invited tab
+          setActiveTab('invited');
         } else {
           await AdminService.createUser(payload);
           toast.success("User created successfully");
@@ -90,7 +98,6 @@ export default function UsersPage() {
       setIsEditModalOpen(false);
       refresh();
     } catch (error: any) {
-      // ── Rollback: delete the just-uploaded image so storage isn't polluted ──
       if (uploadedAvatarUrl) {
         AdminService.deleteUploadedImage(uploadedAvatarUrl).catch(() => {});
       }
@@ -101,26 +108,83 @@ export default function UsersPage() {
     }
   };
 
+  // ── Resend invite ─────────────────────────────────────────────────────────
+  const handleResendClick = (user: any) => {
+    setResendTarget(user);
+    setIsResendModalOpen(true);
+  };
+
+  const handleConfirmResend = async () => {
+    if (!resendTarget) return;
+    setIsResending(true);
+    try {
+      await AdminService.resendInvite(resendTarget._id);
+      toast.success('Invitation resent successfully');
+      setIsResendModalOpen(false);
+      setResendTarget(null);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to resend invitation');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  // ── Archive user ──────────────────────────────────────────────────────────
+  const handleArchiveClick = (user: any) => {
+    setArchiveTarget(user);
+    setIsArchiveModalOpen(true);
+  };
+
+  const handleConfirmArchive = async () => {
+    if (!archiveTarget) return;
+    setIsArchiving(true);
+    try {
+      await AdminService.archiveUser(archiveTarget._id);
+      toast.success('User archived successfully');
+      setIsArchiveModalOpen(false);
+      setArchiveTarget(null);
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to archive user');
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  // ── Unarchive user ────────────────────────────────────────────────────────
+  const handleUnarchive = async (user: any) => {
+    try {
+      await AdminService.unarchiveUser(user._id);
+      toast.success('User unarchived successfully');
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to unarchive user');
+    }
+  };
+
   const columns = useMemo(() => getUserColumns({
     onView: handleViewUser,
     onEdit: (user) => handleOpenEditModal(user),
-    onDelete: (user) => handleDeleteUser(user),
-    onSuspend: (user) => { setSuspendNote(''); handleOpenSuspendModal(user); },
-    onResend: async (user) => {
-      try {
-        await AdminService.resendInvite(user._id);
-        toast.success('Invitation resent successfully');
-      } catch (err: any) {
-        toast.error(err?.response?.data?.message ?? 'Failed to resend invitation');
+    onDelete: (user) => {
+      // "delete" on suspended tab = restore
+      if (activeTab === 'suspended') {
+        handleDeleteUser(user);
+      } else {
+        handleDeleteUser(user);
       }
     },
+    onSuspend: (user) => { setSuspendNote(''); handleOpenSuspendModal(user); },
+    onResend: handleResendClick,
+    onArchive: handleArchiveClick,
+    onUnarchive: handleUnarchive,
     tab: activeTab,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [handleViewUser, handleOpenEditModal, handleDeleteUser, handleOpenSuspendModal, activeTab]);
 
   return (
     <div className="h-full flex flex-col space-y-4 overflow-hidden">
       <div className="px-6 pt-6 shrink-0">
-        <PageHeader 
+        <PageHeader
           title="Users"
           description="Manage system users, roles, and permissions."
           action={{
@@ -132,7 +196,7 @@ export default function UsersPage() {
       </div>
 
       <div className="px-6 shrink-0">
-        <FilterSection 
+        <FilterSection
           searchPlaceholder="Search users by name or email..."
           searchValue={search}
           onSearchChange={(val) => {
@@ -155,37 +219,36 @@ export default function UsersPage() {
       </div>
 
       <div className="flex-1 overflow-hidden px-6">
-        <DataTable 
-          columns={columns as any} 
-          data={users} 
+        <DataTable
+          columns={columns as any}
+          data={users}
           loading={loading}
           onRowClick={handleViewUser}
         />
       </div>
 
       <div className="px-6 pb-6 pt-2 border-t mt-auto shrink-0 bg-background/80 backdrop-blur-sm z-20">
-        <Pagination 
-          currentPage={page} 
-          totalPages={totalPages} 
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
           totalItems={totalItems}
           limit={limit}
-          onPageChange={setPage} 
+          onPageChange={setPage}
           onLimitChange={(newLimit) => {
             setLimit(newLimit);
             setPage(1);
           }}
           itemName="users"
-          
         />
       </div>
 
-      {/* Forms Modal */}
+      {/* ── Invite / Edit Modal ─────────────────────────────────────────── */}
       <Modal
         title={isEditModalOpen ? "Edit User" : "Invite User"}
         description={
           isEditModalOpen
             ? "Update user account details."
-            : "Send an invitation email. The invitee will receive a link to complete their registration."
+            : "Send an invitation email to the invitee."
         }
         isOpen={isAddModalOpen || isEditModalOpen}
         onClose={() => {
@@ -209,15 +272,15 @@ export default function UsersPage() {
         />
       </Modal>
 
-      {/* Details View Modal */}
-      <UserView 
+      {/* ── User Details View Modal ─────────────────────────────────────── */}
+      <UserView
         user={selectedUser}
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
         onEdit={handleOpenEditModal}
       />
 
-      {/* Suspend User Modal */}
+      {/* ── Suspend Modal ──────────────────────────────────────────────── */}
       <Modal
         title="Suspend User"
         description={`Suspend ${selectedUser?.name || 'this user'}. They will not be able to log in until restored.`}
@@ -254,6 +317,71 @@ export default function UsersPage() {
               }}
             >
               {isSuspending ? "Suspending..." : "Confirm Suspend"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Resend Invite Confirmation Modal ───────────────────────────── */}
+      <Modal
+        title="Resend Invitation"
+        description={`Resend invitation email to ${resendTarget?.name || resendTarget?.email || 'this invitee'}?`}
+        isOpen={isResendModalOpen}
+        onClose={() => { setIsResendModalOpen(false); setResendTarget(null); }}
+      >
+        <div className="space-y-4 py-2">
+          <p className="text-sm text-muted-foreground">
+            A new invitation link will be sent to <span className="font-medium text-foreground">{resendTarget?.email}</span>.
+            The previous link will be invalidated.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsResendModalOpen(false); setResendTarget(null); }}
+              disabled={isResending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmResend}
+              disabled={isResending}
+            >
+              {isResending ? "Sending..." : "Resend Invitation"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Archive Confirmation Modal ─────────────────────────────────── */}
+      <Modal
+        title="Archive User"
+        description={`Archive ${archiveTarget?.name || 'this user'}? This will deactivate their account and all assigned roles.`}
+        isOpen={isArchiveModalOpen}
+        onClose={() => { setIsArchiveModalOpen(false); setArchiveTarget(null); }}
+      >
+        <div className="space-y-4 py-2">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+            <p className="text-sm text-destructive font-medium">What will happen:</p>
+            <ul className="mt-1.5 space-y-1 text-sm text-muted-foreground list-disc list-inside">
+              <li>User will be deactivated and cannot log in</li>
+              <li>All platform roles will be deactivated</li>
+              <li>Active session will be invalidated immediately</li>
+            </ul>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsArchiveModalOpen(false); setArchiveTarget(null); }}
+              disabled={isArchiving}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmArchive}
+              disabled={isArchiving}
+            >
+              {isArchiving ? "Archiving..." : "Archive User"}
             </Button>
           </div>
         </div>

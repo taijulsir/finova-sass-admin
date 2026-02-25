@@ -87,6 +87,10 @@ export const AdminService = {
     const { data } = await api.patch(`/admin/users/${userId}/archive`);
     return data;
   },
+  unarchiveUser: async (userId: string) => {
+    const { data } = await api.patch(`/admin/users/${userId}/unarchive`);
+    return data;
+  },
   updateUser: async (userId: string, userData: any) => {
     const { data } = await api.patch(`/admin/users/${userId}`, userData);
     return data;

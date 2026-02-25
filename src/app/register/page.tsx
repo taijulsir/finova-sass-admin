@@ -14,14 +14,16 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  
+
   const setToken = useAuthStore((state) => state.setToken);
   const setUser = useAuthStore((state) => state.setUser);
-  
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ password?: string; confirm?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isInvitation, setIsInvitation] = useState(false);
 
@@ -39,18 +41,38 @@ function RegisterForm() {
     }
   }, [token]);
 
+  const validatePassword = (pw: string): string | null => {
+    if (pw.length < 8) return 'Password must be at least 8 characters';
+    if (!/[A-Z]/.test(pw)) return 'Password must contain at least one uppercase letter';
+    if (!/[a-z]/.test(pw)) return 'Password must contain at least one lowercase letter';
+    if (!/[0-9]/.test(pw)) return 'Password must contain at least one number';
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
+
+    // Client-side validation
+    const errors: { password?: string; confirm?: string } = {};
+    const pwError = validatePassword(password);
+    if (pwError) errors.password = pwError;
+    if (password !== confirmPassword) errors.confirm = 'Passwords do not match';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+
+    setIsLoading(true);
     try {
-      const response = await AuthService.register({ 
-        name, 
-        email, 
+      const response = await AuthService.register({
+        name,
+        email,
         password,
-        token: token || undefined 
+        token: token || undefined
       });
-      
+
       if (response.success) {
         setToken(response.data.accessToken);
         setUser(response.data.user);
@@ -78,7 +100,7 @@ function RegisterForm() {
           <CardContent className="space-y-4">
             {isInvitation && (
               <div className="rounded-md bg-primary/10 p-3 text-sm text-primary">
-                You've been invited! Please complete your registration.
+                You&apos;ve been invited! Please complete your registration.
               </div>
             )}
             {error && (
@@ -117,16 +139,36 @@ function RegisterForm() {
                 type="password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
                 disabled={isLoading}
+                className={fieldErrors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
-              <p className="text-xs text-muted-foreground">
-                Must be at least 8 characters and contain uppercase, lowercase, and numbers.
-              </p>
+              {fieldErrors.password ? (
+                <p className="text-xs text-destructive">{fieldErrors.password}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Must be at least 8 characters and include an <span className="font-medium">uppercase</span> letter, lowercase letter, and number.
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => { setConfirmPassword(e.target.value); setFieldErrors((p) => ({ ...p, confirm: undefined })); }}
+                disabled={isLoading}
+                className={fieldErrors.confirm ? 'border-destructive focus-visible:ring-destructive' : ''}
+              />
+              {fieldErrors.confirm && (
+                <p className="text-xs text-destructive">{fieldErrors.confirm}</p>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
               {isLoading ? 'Creating account...' : 'Create account'}
             </Button>
             <div className="text-center text-sm text-muted-foreground">

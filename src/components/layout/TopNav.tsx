@@ -37,7 +37,7 @@ export function TopNav() {
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <SidebarTrigger className="-ml-1" />
+              <SidebarTrigger className="-ml-1 cursor-pointer" />
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-[10px] font-mono">
               Toggle Sidebar{" "}
@@ -65,7 +65,7 @@ export function TopNav() {
         <Button
           variant="ghost"
           size="icon"
-          className="rounded-xl text-muted-foreground hover:text-foreground"
+          className="rounded-xl text-muted-foreground hover:text-foreground cursor-pointer"
         >
           <Bell className="h-5 w-5" />
         </Button>
@@ -75,7 +75,7 @@ export function TopNav() {
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-full ring-offset-background focus-visible:ring-2 focus-visible:ring-primary/20"
+              className="rounded-full ring-offset-background focus-visible:ring-2 focus-visible:ring-primary/20 cursor-pointer"
             >
               <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                 <User className="h-4 w-4 text-muted-foreground" />

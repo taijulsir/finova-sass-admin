@@ -89,7 +89,7 @@ export function AppSidebar() {
                 asChild
                 isActive={pathname === item.url}
                 className={cn(
-                  "rounded-xl h-11 px-3 transition-all duration-200 group/item",
+                  "rounded-xl h-11 px-3 transition-all duration-200 group/item cursor-pointer",
                   pathname === item.url
                     ? "bg-primary/10 text-primary hover:bg-primary/20"
                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"

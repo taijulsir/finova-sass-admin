@@ -5,7 +5,7 @@ import { Controller, useWatch, useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { AdminService } from "@/services/admin.service";
-import { AlertCircle, CheckCircle2, Loader2, Mail } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ export const userSchema = z.object({
   email: z.string().email("Invalid email address").optional(),
   avatar: z.union([z.instanceof(File), z.string()]).optional().nullable(),
   isInvite: z.boolean().optional(),
+  globalRole: z.string().optional(),
 });
 
 export type UserFormValues = z.infer<typeof userSchema>;
@@ -43,6 +44,7 @@ export function UserForm({
     email: defaultValues?.email ?? "",
     avatar: defaultValues?.avatar ?? null,
     isInvite: isEdit ? defaultValues?.isInvite : true,
+    globalRole: defaultValues?.globalRole ?? "USER",
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -118,17 +120,25 @@ export function UserForm({
             />
           </div>
 
-          {/* Invite banner */}
-          {!isEdit && (
-            <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
-              <Mail className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <p className="text-sm text-muted-foreground leading-snug">
-                An invitation email with a registration link will be sent to the invitee.
-              </p>
-            </div>
-          )}
+          {/* Invite banner — removed as redundant */}
 
           <div className="grid gap-4">
+            {/* Global Role — for invite only */}
+            {!isEdit && (
+              <SelectInput
+                control={form.control}
+                name="globalRole"
+                label="Global Role"
+                placeholder="Select a role"
+                options={[
+                  { label: 'User', value: 'USER' },
+                  { label: 'Admin', value: 'ADMIN' },
+                  { label: 'Support', value: 'SUPPORT' },
+                ]}
+                disabled={isSubmitting}
+              />
+            )}
+
             {/* Invitee / user full name */}
             <ShortTextInput
               control={form.control}
