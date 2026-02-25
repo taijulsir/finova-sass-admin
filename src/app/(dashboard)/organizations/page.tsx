@@ -62,6 +62,7 @@ export default function OrganizationsPage() {
         await AdminService.createOrganization(data);
         toast.success("Organization created successfully");
       }
+      setIsSubmitting(false);
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
       refresh(); 

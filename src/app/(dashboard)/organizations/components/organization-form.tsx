@@ -9,8 +9,21 @@ export const organizationSchema = z.object({
   status: z.enum(["active", "suspended"]).optional().default("active"),
   plan: z.enum(["free", "pro", "enterprise"]).optional().default("free"),
   logo: z.string().optional(),
-  ownerEmail: z.string().email("Invalid email address").optional(),
-  ownerName: z.string().min(2, "Name must be at least 2 characters").optional(),
+  ownerEmail: z
+    .string()
+    .optional()
+    .transform((v) => (v === "" ? undefined : v))
+    .pipe(z.string().email("Invalid email address").optional()),
+  ownerName: z
+    .string()
+    .optional()
+    .transform((v) => (v === "" ? undefined : v))
+    .pipe(
+      z
+        .string()
+        .min(2, "Name must be at least 2 characters")
+        .optional()
+    ),
 });
 
 export type OrganizationFormValues = z.infer<typeof organizationSchema>;

@@ -115,6 +115,7 @@ export default function UsersPage() {
           toast.success("User created successfully");
         }
       }
+      setIsSubmitting(false);
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
       refresh();
@@ -334,6 +335,7 @@ export default function UsersPage() {
         }
         isOpen={isAddModalOpen || isEditModalOpen}
         onClose={() => {
+          setIsSubmitting(false);
           setIsAddModalOpen(false);
           setIsEditModalOpen(false);
           setIsViewModalOpen(false);
@@ -351,6 +353,7 @@ export default function UsersPage() {
           } : undefined}
           onSubmit={handleFormSubmit}
           onCancel={() => {
+            setIsSubmitting(false);
             setIsAddModalOpen(false);
             setIsEditModalOpen(false);
           }}
