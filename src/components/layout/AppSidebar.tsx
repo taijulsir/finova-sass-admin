@@ -72,7 +72,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-muted bg-card">
-      <SidebarHeader className="h-16 flex items-center px-4 border-b border-muted">
+      <SidebarHeader className="h-16 flex  px-4 border-b border-muted">
         <Link href="/" className="flex items-center group">
           {/* Icon-only logo: shown when sidebar is collapsed */}
           <Image
