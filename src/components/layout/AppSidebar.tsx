@@ -72,12 +72,14 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-muted bg-card">
       <SidebarHeader className="h-16 flex items-center px-4 border-b border-muted">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          {/* Logo icon — always visible, 32×32 when expanded, same when collapsed */}
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shrink-0">
             <Building2 className="size-5" />
           </div>
-          <span className="font-bold text-xl tracking-tight transition-opacity duration-300 group-data-[collapsed=true]:opacity-0">
-            SaaS<span className="text-primary">Hub</span>
+          {/* Wordmark — hidden when sidebar is collapsed */}
+          <span className="font-bold text-xl tracking-tight transition-opacity duration-300 group-data-[collapsible=icon]:hidden">
+            Fin<span className="text-primary">ova</span>
           </span>
         </Link>
       </SidebarHeader>

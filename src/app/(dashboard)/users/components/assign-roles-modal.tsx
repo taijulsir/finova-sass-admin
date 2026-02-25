@@ -100,87 +100,113 @@ export function AssignRolesModal({ user, isOpen, onClose, onSuccess }: AssignRol
 
   return (
     <Modal
-      title="Assign Roles"
+      title="Assign Platform Roles"
       description={`Manage platform roles for ${user?.name || user?.email || "this user"}`}
       isOpen={isOpen}
       onClose={handleClose}
+      size="lg"
     >
-      <div className="space-y-4 py-2">
+      <div className="space-y-5 py-1">
         {/* User info header */}
-        <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+        <div className="flex items-center gap-4 rounded-xl border bg-muted/30 p-4">
+          <div className="h-11 w-11 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-base shrink-0 overflow-hidden">
             {user?.avatar
-              ? <img src={user.avatar} alt={user.name} className="h-9 w-9 rounded-full object-cover" />
-              : (user?.name?.charAt(0) || user?.email?.charAt(0) || "?")}
+              ? <img src={user.avatar} alt={user.name} className="h-11 w-11 rounded-full object-cover" />
+              : (user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "?")}
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-medium text-foreground text-sm truncate">{user?.name}</span>
-            <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="font-semibold text-foreground text-base leading-tight truncate">{user?.name}</span>
+            <span className="text-sm text-muted-foreground truncate">{user?.email}</span>
           </div>
           {user?.globalRole && (
-            <Badge variant="outline" className="ml-auto shrink-0 text-xs capitalize">
-              {user.globalRole.replace("_", " ").toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
+            <Badge
+              variant="outline"
+              className="shrink-0 text-xs px-2.5 py-1 capitalize font-medium"
+            >
+              {user.globalRole.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
             </Badge>
           )}
         </div>
 
         {/* Roles list */}
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-            Platform Roles
-          </p>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-foreground">Platform Roles</p>
+            <span className="text-xs text-muted-foreground">
+              {assignedRoleIds.size} role{assignedRoleIds.size !== 1 ? "s" : ""} assigned
+            </span>
+          </div>
+
           {loadingRoles ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+                <Skeleton key={i} className="h-16 w-full rounded-xl" />
               ))}
             </div>
           ) : allRoles.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
               No platform roles found. Create roles in the Roles section first.
             </div>
           ) : (
-            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-80 overflow-y-auto">
               {allRoles.map((role) => {
                 const isAssigned = assignedRoleIds.has(role._id);
                 const isSaving = savingRoleId === role._id;
                 return (
                   <div
                     key={role._id}
-                    className={`flex items-center justify-between rounded-lg border p-3 transition-colors ${
+                    className={`flex items-center gap-4 rounded-xl border p-4 transition-all ${
                       isAssigned
-                        ? "border-primary/30 bg-primary/5"
-                        : "border-border bg-background hover:bg-muted/30"
+                        ? "border-primary/40 bg-primary/5 shadow-sm"
+                        : "border-border bg-card hover:bg-muted/40 hover:border-muted-foreground/20"
                     }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-                          isAssigned ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        <TbShieldCheckIcon className="h-4 w-4" />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-medium text-foreground truncate">{role.name}</span>
-                        {role.description && (
-                          <span className="text-xs text-muted-foreground truncate">{role.description}</span>
+                    {/* Role icon */}
+                    <div
+                      className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                        isAssigned
+                          ? "bg-primary/15 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      <TbShieldCheckIcon className="h-5 w-5" />
+                    </div>
+
+                    {/* Role name + description */}
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">{role.name}</span>
+                        {isAssigned && (
+                          <Badge className="text-[10px] h-4 px-1.5 bg-primary/15 text-primary border-primary/20 hover:bg-primary/15">
+                            Active
+                          </Badge>
                         )}
                       </div>
+                      {role.description ? (
+                        <span className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{role.description}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50 mt-0.5 italic">No description</span>
+                      )}
                     </div>
+
+                    {/* Action button */}
                     <Button
-                      variant={isAssigned ? "destructive" : "default"}
+                      variant={isAssigned ? "outline" : "default"}
                       size="sm"
-                      className="ml-3 shrink-0 min-w-22"
+                      className={`shrink-0 min-w-24 transition-all ${
+                        isAssigned
+                          ? "border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          : ""
+                      }`}
                       onClick={() => handleToggleRole(role)}
                       disabled={!!savingRoleId}
                     >
                       {isSaving ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : isAssigned ? (
-                        <><TbShieldX className="h-3 w-3 mr-1" />Remove</>
+                        <><TbShieldX className="h-3.5 w-3.5 mr-1.5" />Remove</>
                       ) : (
-                        <><TbShieldCheckIcon className="h-3 w-3 mr-1" />Assign</>
+                        <><TbShieldCheckIcon className="h-3.5 w-3.5 mr-1.5" />Assign</>
                       )}
                     </Button>
                   </div>
@@ -190,8 +216,8 @@ export function AssignRolesModal({ user, isOpen, onClose, onSuccess }: AssignRol
           )}
         </div>
 
-        <div className="flex justify-end pt-2">
-          <Button variant="outline" onClick={handleClose}>
+        <div className="flex justify-end pt-1 border-t">
+          <Button variant="outline" onClick={handleClose} className="mt-3">
             Done
           </Button>
         </div>

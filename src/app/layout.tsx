@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SaaS Admin Hub | Super Admin",
-  description: "Enterprise SaaS Platform Management",
+  title: "Finova Control Center",
+  description: "Finova Platform Management & Administration",
 };
 
 export default function RootLayout({

@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import {
   TbEdit, TbTrash, TbMailForward, TbArchive, TbRefresh,
-  TbForbid2, TbArchiveOff, TbShieldCheck,
+  TbForbid2, TbArchiveOff, TbShieldCheck, TbUserCheck,
 } from "react-icons/tb";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -311,7 +311,7 @@ export const getUserColumns = ({
         accessorKey: "suspenseNote",
         header: "Reason",
         cell: (user) => (
-          <span className="text-sm text-muted-foreground line-clamp-1 max-w-[180px]">
+          <span className="text-sm text-muted-foreground line-clamp-1 max-w-45">
             {user.suspenseNote || '—'}
           </span>
         ),
@@ -337,13 +337,13 @@ export const getUserColumns = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-green-600 cursor-pointer"
+                    className="h-8 w-8 text-muted-foreground hover:text-green-600 hover:bg-green-50 cursor-pointer"
                     onClick={() => onDelete(row)}
                   >
-                    <TbArchiveOff className="h-4 w-4" />
+                    <TbUserCheck className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Restore User</TooltipContent>
+                <TooltipContent>Unsuspend User</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
