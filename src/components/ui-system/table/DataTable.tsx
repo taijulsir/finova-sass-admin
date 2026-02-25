@@ -18,6 +18,8 @@ interface Column<T> {
   accessorKey: keyof T | string;
   cell?: (item: T) => React.ReactNode;
   className?: string;
+  /** Set true on action columns to stop row-click from firing when interacting with buttons */
+  isAction?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -97,7 +99,11 @@ export function DataTable<T>({
                   onClick={() => onRowClick?.(item)}
                 >
                   {columns.map((column, colIndex) => (
-                    <TableCell key={colIndex} className={cn("py-4", column.className)}>
+                    <TableCell
+                      key={colIndex}
+                      className={cn("py-4", column.className)}
+                      onClick={column.isAction ? (e) => e.stopPropagation() : undefined}
+                    >
                       {column.cell
                         ? column.cell(item)
                         : (item[column.accessorKey as keyof T] as React.ReactNode)}

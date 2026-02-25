@@ -336,7 +336,7 @@ export default function UsersPage() {
         onClose={() => {
           setIsAddModalOpen(false);
           setIsEditModalOpen(false);
-          // Don't clear selectedUser here — it's needed for re-open edit from view
+          setIsViewModalOpen(false);
         }}
       >
         <UserForm
