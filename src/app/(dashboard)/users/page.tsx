@@ -44,6 +44,16 @@ export default function UsersPage() {
   const [cancelInviteTarget, setCancelInviteTarget] = useState<any>(null);
   const [isCancellingInvite, setIsCancellingInvite] = useState(false);
 
+  // ── Unarchive confirmation modal ──────────────────────────────────────────
+  const [isUnarchiveModalOpen, setIsUnarchiveModalOpen] = useState(false);
+  const [unarchiveTarget, setUnarchiveTarget] = useState<any>(null);
+  const [isUnarchiving, setIsUnarchiving] = useState(false);
+
+  // ── Unsuspend confirmation modal ──────────────────────────────────────────
+  const [isUnsuspendModalOpen, setIsUnsuspendModalOpen] = useState(false);
+  const [unsuspendTarget, setUnsuspendTarget] = useState<any>(null);
+  const [isUnsuspending, setIsUnsuspending] = useState(false);
+
   // ── Assign Roles modal ────────────────────────────────────────────────────
   const [isAssignRolesModalOpen, setIsAssignRolesModalOpen] = useState(false);
   const [assignRolesTarget, setAssignRolesTarget] = useState<any>(null);
@@ -183,13 +193,46 @@ export default function UsersPage() {
   };
 
   // ── Unarchive user ────────────────────────────────────────────────────────
-  const handleUnarchive = async (user: any) => {
+  const handleUnarchiveClick = (user: any) => {
+    setUnarchiveTarget(user);
+    setIsUnarchiveModalOpen(true);
+  };
+
+  const handleConfirmUnarchive = async () => {
+    if (!unarchiveTarget) return;
+    setIsUnarchiving(true);
     try {
-      await AdminService.unarchiveUser(user._id);
+      await AdminService.unarchiveUser(unarchiveTarget._id);
       toast.success('User unarchived successfully');
+      setIsUnarchiveModalOpen(false);
+      setUnarchiveTarget(null);
       refresh();
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? 'Failed to unarchive user');
+    } finally {
+      setIsUnarchiving(false);
+    }
+  };
+
+  // ── Unsuspend user ────────────────────────────────────────────────────────
+  const handleUnsuspendClick = (user: any) => {
+    setUnsuspendTarget(user);
+    setIsUnsuspendModalOpen(true);
+  };
+
+  const handleConfirmUnsuspend = async () => {
+    if (!unsuspendTarget) return;
+    setIsUnsuspending(true);
+    try {
+      await AdminService.restoreUser(unsuspendTarget._id);
+      toast.success('User unsuspended successfully');
+      setIsUnsuspendModalOpen(false);
+      setUnsuspendTarget(null);
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to unsuspend user');
+    } finally {
+      setIsUnsuspending(false);
     }
   };
 
@@ -206,7 +249,7 @@ export default function UsersPage() {
       if (activeTab === 'invited') {
         handleCancelInviteClick(user);
       } else if (activeTab === 'suspended') {
-        handleDeleteUser(user);
+        handleUnsuspendClick(user);
       } else {
         handleDeleteUser(user);
       }
@@ -214,7 +257,7 @@ export default function UsersPage() {
     onSuspend: (user) => { setSuspendNote(''); handleOpenSuspendModal(user); },
     onResend: handleResendClick,
     onArchive: handleArchiveClick,
-    onUnarchive: handleUnarchive,
+    onUnarchive: handleUnarchiveClick,
     onAssignRoles: handleAssignRolesClick,
     tab: activeTab,
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -468,6 +511,80 @@ export default function UsersPage() {
         onClose={() => { setIsAssignRolesModalOpen(false); setAssignRolesTarget(null); }}
         onSuccess={refresh}
       />
+
+      {/* ── Unarchive Confirmation Modal ───────────────────────────────── */}
+      <Modal
+        title="Unarchive User"
+        description={`Restore ${unarchiveTarget?.name || 'this user'} from archive?`}
+        isOpen={isUnarchiveModalOpen}
+        onClose={() => { setIsUnarchiveModalOpen(false); setUnarchiveTarget(null); }}
+      >
+        <div className="space-y-4 py-2">
+          <div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900 p-3">
+            <p className="text-sm text-green-800 dark:text-green-400 font-medium">What will happen:</p>
+            <ul className="mt-1.5 space-y-1 text-sm text-muted-foreground list-disc list-inside">
+              <li>User account will be re-activated</li>
+              <li>All platform roles will be restored</li>
+              <li>User can log in again with their credentials</li>
+            </ul>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsUnarchiveModalOpen(false); setUnarchiveTarget(null); }}
+              disabled={isUnarchiving}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmUnarchive}
+              disabled={isUnarchiving}
+            >
+              {isUnarchiving ? "Restoring..." : "Unarchive User"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Unsuspend Confirmation Modal ───────────────────────────────── */}
+      <Modal
+        title="Unsuspend User"
+        description={`Lift suspension for ${unsuspendTarget?.name || 'this user'}?`}
+        isOpen={isUnsuspendModalOpen}
+        onClose={() => { setIsUnsuspendModalOpen(false); setUnsuspendTarget(null); }}
+      >
+        <div className="space-y-4 py-2">
+          <div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900 p-3">
+            <p className="text-sm text-green-800 dark:text-green-400 font-medium">What will happen:</p>
+            <ul className="mt-1.5 space-y-1 text-sm text-muted-foreground list-disc list-inside">
+              <li>Suspension will be lifted immediately</li>
+              <li>User will be able to log in again</li>
+              <li>Suspension reason will be cleared</li>
+            </ul>
+          </div>
+          {unsuspendTarget?.suspenseNote && (
+            <div className="rounded-lg border border-muted bg-muted/30 p-3">
+              <p className="text-xs text-muted-foreground font-medium mb-1">Suspension reason</p>
+              <p className="text-sm text-foreground">{unsuspendTarget.suspenseNote}</p>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsUnsuspendModalOpen(false); setUnsuspendTarget(null); }}
+              disabled={isUnsuspending}
+            >
+              Keep Suspended
+            </Button>
+            <Button
+              onClick={handleConfirmUnsuspend}
+              disabled={isUnsuspending}
+            >
+              {isUnsuspending ? "Unsuspending..." : "Unsuspend User"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import {
-  TbEdit, TbTrash, TbMailForward, TbArchive, TbRefresh,
+  TbEdit, TbTrash, TbMailForward, TbArchive, TbSend,
   TbForbid2, TbArchiveOff, TbShieldCheck, TbUserCheck,
 } from "react-icons/tb";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -186,7 +186,7 @@ export const getUserColumns = ({
                       className="h-8 w-8 text-muted-foreground hover:text-primary cursor-pointer"
                       onClick={() => onResend(row)}
                     >
-                      <TbRefresh className="h-4 w-4" />
+                      <TbSend className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Resend Invitation</TooltipContent>
