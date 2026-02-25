@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/ui-system/page-header";
 import { FilterSection } from "@/components/ui-system/filter-section";
 import { UserForm, UserFormValues } from "./components/user-form";
 import { UserView } from "./components/user-view";
+import { AssignRolesModal } from "./components/assign-roles-modal";
 import { getUserColumns } from "./user-utils";
 import { useUserHandlers } from "./user-helpers";
 import { useFetchData } from "@/hooks/use-fetch-data";
@@ -37,6 +38,15 @@ export default function UsersPage() {
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<any>(null);
   const [isArchiving, setIsArchiving] = useState(false);
+
+  // ── Cancel invite confirmation modal ──────────────────────────────────────
+  const [isCancelInviteModalOpen, setIsCancelInviteModalOpen] = useState(false);
+  const [cancelInviteTarget, setCancelInviteTarget] = useState<any>(null);
+  const [isCancellingInvite, setIsCancellingInvite] = useState(false);
+
+  // ── Assign Roles modal ────────────────────────────────────────────────────
+  const [isAssignRolesModalOpen, setIsAssignRolesModalOpen] = useState(false);
+  const [assignRolesTarget, setAssignRolesTarget] = useState<any>(null);
 
   const fetchParams = useMemo(() => ({
     page,
@@ -68,7 +78,8 @@ export default function UsersPage() {
     handleViewUser,
     handleOpenSuspendModal,
     handleConfirmSuspend,
-    handleDeleteUser
+    handleDeleteUser,
+    handleCancelInvite,
   } = useUserHandlers(refresh);
 
   const handleFormSubmit = async (data: UserFormValues) => {
@@ -129,6 +140,26 @@ export default function UsersPage() {
     }
   };
 
+  // ── Cancel invite ─────────────────────────────────────────────────────────
+  const handleCancelInviteClick = (user: any) => {
+    setCancelInviteTarget(user);
+    setIsCancelInviteModalOpen(true);
+  };
+
+  const handleConfirmCancelInvite = async () => {
+    if (!cancelInviteTarget) return;
+    setIsCancellingInvite(true);
+    try {
+      await handleCancelInvite(cancelInviteTarget);
+      setIsCancelInviteModalOpen(false);
+      setCancelInviteTarget(null);
+    } catch {
+      // error already toasted in handleCancelInvite
+    } finally {
+      setIsCancellingInvite(false);
+    }
+  };
+
   // ── Archive user ──────────────────────────────────────────────────────────
   const handleArchiveClick = (user: any) => {
     setArchiveTarget(user);
@@ -162,12 +193,19 @@ export default function UsersPage() {
     }
   };
 
+  // ── Assign Roles ──────────────────────────────────────────────────────────
+  const handleAssignRolesClick = (user: any) => {
+    setAssignRolesTarget(user);
+    setIsAssignRolesModalOpen(true);
+  };
+
   const columns = useMemo(() => getUserColumns({
     onView: handleViewUser,
     onEdit: (user) => handleOpenEditModal(user),
     onDelete: (user) => {
-      // "delete" on suspended tab = restore
-      if (activeTab === 'suspended') {
+      if (activeTab === 'invited') {
+        handleCancelInviteClick(user);
+      } else if (activeTab === 'suspended') {
         handleDeleteUser(user);
       } else {
         handleDeleteUser(user);
@@ -177,6 +215,7 @@ export default function UsersPage() {
     onResend: handleResendClick,
     onArchive: handleArchiveClick,
     onUnarchive: handleUnarchive,
+    onAssignRoles: handleAssignRolesClick,
     tab: activeTab,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [handleViewUser, handleOpenEditModal, handleDeleteUser, handleOpenSuspendModal, activeTab]);
@@ -254,15 +293,18 @@ export default function UsersPage() {
         onClose={() => {
           setIsAddModalOpen(false);
           setIsEditModalOpen(false);
+          // Don't clear selectedUser here — it's needed for re-open edit from view
         }}
       >
         <UserForm
+          key={selectedUser?._id ?? 'new'}
           isEdit={isEditModalOpen}
           isSubmitting={isSubmitting}
           defaultValues={selectedUser ? {
             name: selectedUser.name,
             email: selectedUser.email,
             avatar: selectedUser.avatar,
+            globalRole: selectedUser.globalRole ?? 'USER',
           } : undefined}
           onSubmit={handleFormSubmit}
           onCancel={() => {
@@ -386,6 +428,46 @@ export default function UsersPage() {
           </div>
         </div>
       </Modal>
+
+      {/* ── Cancel Invite Confirmation Modal ───────────────────────────── */}
+      <Modal
+        title="Cancel Invitation"
+        description={`Cancel invitation for ${cancelInviteTarget?.name || cancelInviteTarget?.email || 'this invitee'}?`}
+        isOpen={isCancelInviteModalOpen}
+        onClose={() => { setIsCancelInviteModalOpen(false); setCancelInviteTarget(null); }}
+      >
+        <div className="space-y-4 py-2">
+          <p className="text-sm text-muted-foreground">
+            The invitation link sent to{' '}
+            <span className="font-medium text-foreground">{cancelInviteTarget?.email}</span>{' '}
+            will be cancelled and they will no longer be able to register with this link.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsCancelInviteModalOpen(false); setCancelInviteTarget(null); }}
+              disabled={isCancellingInvite}
+            >
+              Keep Invitation
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmCancelInvite}
+              disabled={isCancellingInvite}
+            >
+              {isCancellingInvite ? "Cancelling..." : "Cancel Invitation"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Assign Roles Modal ──────────────────────────────────────────── */}
+      <AssignRolesModal
+        user={assignRolesTarget}
+        isOpen={isAssignRolesModalOpen}
+        onClose={() => { setIsAssignRolesModalOpen(false); setAssignRolesTarget(null); }}
+        onSuccess={refresh}
+      />
     </div>
   );
 }

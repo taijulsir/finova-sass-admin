@@ -66,6 +66,16 @@ export const useUserHandlers = (refreshData: () => void) => {
     }
   }, [refreshData]);
 
+  const handleCancelInvite = useCallback(async (user: any) => {
+    try {
+      await AdminService.deleteUser(user._id);
+      toast.success('Invitation cancelled successfully');
+      refreshData();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to cancel invitation');
+    }
+  }, [refreshData]);
+
   return {
     isAddModalOpen,
     setIsAddModalOpen,
@@ -82,5 +92,6 @@ export const useUserHandlers = (refreshData: () => void) => {
     handleOpenSuspendModal,
     handleConfirmSuspend,
     handleDeleteUser,
+    handleCancelInvite,
   };
 };

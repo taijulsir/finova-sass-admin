@@ -32,15 +32,15 @@ import type { ModuleKey } from "@/lib/permissions";
 /** Each nav item optionally declares a module key that gates it via platform permissions.
  *  Items with no `module` are always visible to any authenticated admin. */
 const NAV_ITEMS: { title: string; url: string; icon: React.ElementType; module?: ModuleKey }[] = [
-  { title: "Dashboard",           url: "/",              icon: LayoutDashboard },
-  { title: "Organizations",       url: "/organizations", icon: Building2,       module: "ORGANIZATIONS" },
-  { title: "Subscriptions",       url: "/subscriptions", icon: CreditCard,      module: "SUBSCRIPTIONS" },
-  { title: "Plans",               url: "/plans",         icon: Layers,          module: "PLANS" },
-  { title: "Users",               url: "/users",         icon: Users,           module: "USERS" },
-  { title: "Roles & Permissions",  url: "/roles",         icon: ShieldCheck,     module: "ROLES" },
-  { title: "Audit Logs",          url: "/audit",         icon: History,         module: "AUDIT" },
-  { title: "Analytics",           url: "/analytics",     icon: BarChart3,       module: "ANALYTICS" },
-  { title: "Settings",            url: "/settings",      icon: Settings },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Organizations", url: "/organizations", icon: Building2, module: "ORGANIZATIONS" },
+  { title: "Users", url: "/users", icon: Users, module: "USERS" },
+  { title: "Roles & Permissions", url: "/roles", icon: ShieldCheck, module: "ROLES" },
+  { title: "Subscriptions", url: "/subscriptions", icon: CreditCard, module: "SUBSCRIPTIONS" },
+  { title: "Plans", url: "/plans", icon: Layers, module: "PLANS" },
+  { title: "Audit Logs", url: "/audit", icon: History, module: "AUDIT" },
+  { title: "Analytics", url: "/analytics", icon: BarChart3, module: "ANALYTICS" },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -49,7 +49,7 @@ export function AppSidebar() {
 
   // Use individual stable primitive selectors — never pass an inline object selector
   // to a persisted zustand store, as it creates a new reference every render.
-  const user          = useAuthStore((s) => s.user);
+  const user = useAuthStore((s) => s.user);
   const platformRoles = useAuthStore((s) => s.platformRoles);
 
   // Hydration guard: zustand/persist rehydrates from localStorage only on the client.

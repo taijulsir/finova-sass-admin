@@ -57,8 +57,15 @@ export function UserForm({
   const debouncedEmail = useDebounce(emailValue, 500);
 
   useEffect(() => {
+    // Never validate email in edit mode
+    if (isEdit) {
+      setEmailStatus(null);
+      setIsValidatingEmail(false);
+      return;
+    }
+
     async function checkEmail() {
-      if (!debouncedEmail || isEdit || !debouncedEmail.includes("@")) {
+      if (!debouncedEmail || !debouncedEmail.includes("@")) {
         setEmailStatus(null);
         setIsValidatingEmail(false);
         return;
@@ -120,24 +127,21 @@ export function UserForm({
             />
           </div>
 
-          {/* Invite banner — removed as redundant */}
-
           <div className="grid gap-4">
-            {/* Global Role — for invite only */}
-            {!isEdit && (
-              <SelectInput
-                control={form.control}
-                name="globalRole"
-                label="Global Role"
-                placeholder="Select a role"
-                options={[
-                  { label: 'User', value: 'USER' },
-                  { label: 'Admin', value: 'ADMIN' },
-                  { label: 'Support', value: 'SUPPORT' },
-                ]}
-                disabled={isSubmitting}
-              />
-            )}
+            {/* Global Role — shown for both invite and edit */}
+            <SelectInput
+              control={form.control}
+              name="globalRole"
+              label="Global Role"
+              placeholder="Select a role"
+              options={[
+                { label: 'User', value: 'USER' },
+                { label: 'Admin', value: 'ADMIN' },
+                { label: 'Support', value: 'SUPPORT' },
+                { label: 'Super Admin', value: 'SUPER_ADMIN' },
+              ]}
+              disabled={isSubmitting}
+            />
 
             {/* Invitee / user full name */}
             <ShortTextInput

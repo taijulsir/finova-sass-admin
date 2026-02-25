@@ -129,4 +129,22 @@ export const AdminService = {
     const { data } = await api.delete(`/admin/roles/${id}`);
     return data;
   },
+
+  // ── Platform RBAC (role assignment per user) ──────────────────────────────
+  getPlatformRoles: async () => {
+    const { data } = await api.get('/platform-rbac/roles', { params: { page: 1, limit: 100 } });
+    return data;
+  },
+  getUserPlatformRoles: async (userId: string) => {
+    const { data } = await api.get(`/platform-rbac/users/${userId}/roles`);
+    return data;
+  },
+  assignPlatformRole: async (userId: string, roleId: string) => {
+    const { data } = await api.post(`/platform-rbac/users/${userId}/roles`, { roleId });
+    return data;
+  },
+  removePlatformRole: async (userId: string, roleId: string) => {
+    const { data } = await api.delete(`/platform-rbac/users/${userId}/roles/${roleId}`);
+    return data;
+  },
 }
