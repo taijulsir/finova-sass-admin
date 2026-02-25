@@ -14,7 +14,8 @@ interface Role {
   _id: string;
   name: string;
   description?: string;
-  isActive: boolean;
+  isSystem: boolean;
+  createdAt?: string;
 }
 
 interface AssignRolesModalProps {
@@ -39,19 +40,18 @@ export function AssignRolesModal({ user, isOpen, onClose, onSuccess }: AssignRol
         AdminService.getUserPlatformRoles(user._id),
       ]);
 
-      // All roles: data.data.roles (paginated) or data.data (array)
-      const roles: Role[] =
-        allRolesRes?.data?.roles ??
-        allRolesRes?.data ??
-        allRolesRes?.roles ??
-        [];
-      setAllRoles(roles.filter((r: Role) => r.isActive !== false));
+      // GET /platform-rbac/roles → { success, data: { roles: [...], total, page, ... } }
+      const rolesPayload = allRolesRes?.data;
+      const roles: Role[] = Array.isArray(rolesPayload?.roles)
+        ? rolesPayload.roles
+        : Array.isArray(rolesPayload)
+        ? rolesPayload
+        : [];
+      setAllRoles(roles);
 
-      // User roles: array of role objects
-      const userRoles: any[] =
-        userRolesRes?.data ??
-        userRolesRes ??
-        [];
+      // GET /platform-rbac/users/:userId/roles → { success, data: [...roleObjects] }
+      const userRolesPayload = userRolesRes?.data;
+      const userRoles: any[] = Array.isArray(userRolesPayload) ? userRolesPayload : [];
       const ids = new Set<string>(userRoles.map((r: any) => r._id?.toString()));
       setAssignedRoleIds(ids);
     } catch (err) {
@@ -174,11 +174,18 @@ export function AssignRolesModal({ user, isOpen, onClose, onSuccess }: AssignRol
 
                     {/* Role name + description */}
                     <div className="flex flex-col min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-foreground">{role.name}</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-foreground">
+                          {role.name.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
+                        </span>
                         {isAssigned && (
                           <Badge className="text-[10px] h-4 px-1.5 bg-primary/15 text-primary border-primary/20 hover:bg-primary/15">
-                            Active
+                            Assigned
+                          </Badge>
+                        )}
+                        {role.isSystem && (
+                          <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-muted-foreground">
+                            System
                           </Badge>
                         )}
                       </div>
