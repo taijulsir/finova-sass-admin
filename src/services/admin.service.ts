@@ -59,6 +59,10 @@ export const AdminService = {
     const { data } = await api.patch(`/admin/users/${userId}/restore`);
     return data;
   },
+  forceLogout: async (userId: string) => {
+    const { data } = await api.patch(`/admin/users/${userId}/force-logout`);
+    return data;
+  },
   deleteUser: async (userId: string) => {
     const { data } = await api.delete(`/admin/users/${userId}`);
     return data;

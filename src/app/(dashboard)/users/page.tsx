@@ -10,7 +10,7 @@ import { DataTable } from "@/components/ui-system/table/DataTable";
 import { PageHeader } from "@/components/ui-system/page-header";
 import { FilterSection } from "@/components/ui-system/filter-section";
 import { UserForm, UserFormValues } from "./components/user-form";
-import { UserView } from "./components/user-view";
+import { UserDetailDrawer } from "./components/user-detail-drawer";
 import { AssignRolesModal } from "./components/assign-roles-modal";
 import { getUserColumns } from "./user-utils";
 import { useUserHandlers } from "./user-helpers";
@@ -53,6 +53,11 @@ export default function UsersPage() {
   const [isUnsuspendModalOpen, setIsUnsuspendModalOpen] = useState(false);
   const [unsuspendTarget, setUnsuspendTarget] = useState<any>(null);
   const [isUnsuspending, setIsUnsuspending] = useState(false);
+
+  // ── Force Logout confirmation modal ──────────────────────────────────────
+  const [isForceLogoutModalOpen, setIsForceLogoutModalOpen] = useState(false);
+  const [forceLogoutTarget, setForceLogoutTarget] = useState<any>(null);
+  const [isForceLoggingOut, setIsForceLoggingOut] = useState(false);
 
   // ── Assign Roles modal ────────────────────────────────────────────────────
   const [isAssignRolesModalOpen, setIsAssignRolesModalOpen] = useState(false);
@@ -237,6 +242,27 @@ export default function UsersPage() {
     }
   };
 
+  // ── Force Logout ──────────────────────────────────────────────────────────
+  const handleForceLogoutClick = (user: any) => {
+    setForceLogoutTarget(user);
+    setIsForceLogoutModalOpen(true);
+  };
+
+  const handleConfirmForceLogout = async () => {
+    if (!forceLogoutTarget) return;
+    setIsForceLoggingOut(true);
+    try {
+      await AdminService.forceLogout(forceLogoutTarget._id);
+      toast.success(`${forceLogoutTarget.name || 'User'} has been logged out of all sessions`);
+      setIsForceLogoutModalOpen(false);
+      setForceLogoutTarget(null);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to force logout user');
+    } finally {
+      setIsForceLoggingOut(false);
+    }
+  };
+
   // ── Assign Roles ──────────────────────────────────────────────────────────
   const handleAssignRolesClick = (user: any) => {
     setAssignRolesTarget(user);
@@ -260,6 +286,7 @@ export default function UsersPage() {
     onArchive: handleArchiveClick,
     onUnarchive: handleUnarchiveClick,
     onAssignRoles: handleAssignRolesClick,
+    onForceLogout: handleForceLogoutClick,
     tab: activeTab,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [handleViewUser, handleOpenEditModal, handleDeleteUser, handleOpenSuspendModal, activeTab]);
@@ -360,12 +387,14 @@ export default function UsersPage() {
         />
       </Modal>
 
-      {/* ── User Details View Modal ─────────────────────────────────────── */}
-      <UserView
+      {/* ── User Details Drawer ─────────────────────────────────────────── */}
+      <UserDetailDrawer
         user={selectedUser}
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
         onEdit={handleOpenEditModal}
+        onAssignRoles={handleAssignRolesClick}
+        onForceLogout={handleForceLogoutClick}
       />
 
       {/* ── Suspend Modal ──────────────────────────────────────────────── */}
@@ -514,6 +543,42 @@ export default function UsersPage() {
         onClose={() => { setIsAssignRolesModalOpen(false); setAssignRolesTarget(null); }}
         onSuccess={refresh}
       />
+
+      {/* ── Force Logout Confirmation Modal ───────────────────────────────── */}
+      <Modal
+        title="Force Logout"
+        description={`Log out ${forceLogoutTarget?.name || 'this user'} from all active sessions?`}
+        isOpen={isForceLogoutModalOpen}
+        onClose={() => { setIsForceLogoutModalOpen(false); setForceLogoutTarget(null); }}
+      >
+        <div className="space-y-4 py-2">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-3">
+            <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">What will happen:</p>
+            <ul className="mt-1.5 space-y-1 text-sm text-muted-foreground list-disc list-inside">
+              <li>All active sessions will be immediately terminated</li>
+              <li>Refresh tokens will be invalidated</li>
+              <li>User will need to log in again</li>
+            </ul>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsForceLogoutModalOpen(false); setForceLogoutTarget(null); }}
+              disabled={isForceLoggingOut}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmForceLogout}
+              disabled={isForceLoggingOut}
+              className="bg-amber-600 hover:bg-amber-700 text-white border-transparent"
+            >
+              {isForceLoggingOut ? "Logging out..." : "Force Logout"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* ── Unarchive Confirmation Modal ───────────────────────────────── */}
       <Modal
