@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import {
   LayoutDashboard,
   Building2,
@@ -72,15 +73,25 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-muted bg-card">
       <SidebarHeader className="h-16 flex items-center px-4 border-b border-muted">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          {/* Logo icon — always visible, 32×32 when expanded, same when collapsed */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shrink-0">
-            <Building2 className="size-5" />
-          </div>
-          {/* Wordmark — hidden when sidebar is collapsed */}
-          <span className="font-bold text-xl tracking-tight transition-opacity duration-300 group-data-[collapsible=icon]:hidden">
-            Fin<span className="text-primary">ova</span>
-          </span>
+        <Link href="/" className="flex items-center group">
+          {/* Icon-only logo: shown when sidebar is collapsed */}
+          <Image
+            src="/finova-without-text.svg"
+            alt="Finova"
+            width={36}
+            height={36}
+            className="shrink-0 group-data-[collapsible=icon]:block hidden"
+            priority
+          />
+          {/* Full logo with text: shown when sidebar is expanded */}
+          <Image
+            src="/finova-with-text.svg"
+            alt="Finova"
+            width={130}
+            height={32}
+            className="shrink-0 group-data-[collapsible=icon]:hidden block"
+            priority
+          />
         </Link>
       </SidebarHeader>
       <SidebarContent className="px-2 py-4">
