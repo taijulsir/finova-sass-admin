@@ -154,6 +154,46 @@ export const AdminService = {
     });
     return data;
   },
+  getAnalyticsOverview: async (startDate?: string, endDate?: string) => {
+    const { data } = await api.get('/admin/analytics/overview', {
+      params: { startDate, endDate },
+    });
+    return data;
+  },
+  getRevenueTrend: async (startDate?: string, endDate?: string) => {
+    const { data } = await api.get('/admin/analytics/revenue-trend', {
+      params: { startDate, endDate },
+    });
+    return data;
+  },
+  getRevenueByPlan: async () => {
+    const { data } = await api.get('/admin/analytics/revenue-by-plan');
+    return data;
+  },
+  getSubscriptionStats: async (startDate?: string, endDate?: string) => {
+    const { data } = await api.get('/admin/analytics/subscription-stats', {
+      params: { startDate, endDate },
+    });
+    return data;
+  },
+  getUserGrowth: async (startDate?: string, endDate?: string) => {
+    const { data } = await api.get('/admin/analytics/user-growth', {
+      params: { startDate, endDate },
+    });
+    return data;
+  },
+  getOrgGrowth: async (startDate?: string, endDate?: string) => {
+    const { data } = await api.get('/admin/analytics/org-growth', {
+      params: { startDate, endDate },
+    });
+    return data;
+  },
+  getChurnAnalysis: async (startDate?: string, endDate?: string) => {
+    const { data } = await api.get('/admin/analytics/churn', {
+      params: { startDate, endDate },
+    });
+    return data;
+  },
   getSettings: async () => {
     const { data } = await api.get('/admin/settings');
     return data;
