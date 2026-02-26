@@ -5,37 +5,42 @@ import { FormContainer } from "@/components/ui-system/form-container";
 import { SelectInput } from "@/components/ui-system/form-fields";
 
 const subscriptionSchema = z.object({
-  plan: z.string().min(1, "Plan is required"),
-  status: z.string().min(1, "Status is required"),
+  planId: z.string().min(1, "Plan is required"),
+  reason: z.string().optional(),
 });
 
 export type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
 
 interface SubscriptionFormProps {
-  isEdit?: boolean;
   isSubmitting?: boolean;
   defaultValues?: Partial<SubscriptionFormValues>;
   onSubmit: (data: SubscriptionFormValues) => void;
   onCancel: () => void;
   orgName?: string;
+  plans?: { _id: string; name: string; price: number; billingCycle: string }[];
 }
 
 export function SubscriptionForm({
-  isEdit,
   isSubmitting,
   defaultValues,
   onSubmit,
   onCancel,
-  orgName
+  orgName,
+  plans = [],
 }: SubscriptionFormProps) {
+  const planOptions = plans.map((p) => ({
+    label: `${p.name} — $${p.price}/${p.billingCycle === "yearly" ? "yr" : "mo"}`,
+    value: p._id,
+  }));
+
   return (
     <FormContainer
       schema={subscriptionSchema}
-      defaultValues={defaultValues || { plan: 'free', status: 'active' }}
+      defaultValues={defaultValues || { planId: '' }}
       onSubmit={onSubmit}
       onCancel={onCancel}
       isSubmitting={isSubmitting}
-      submitLabel={isEdit ? "Update Subscription" : "Create Subscription"}
+      submitLabel="Change Plan"
     >
       {(form) => (
         <div className="space-y-4 py-2">
@@ -50,24 +55,10 @@ export function SubscriptionForm({
           
           <SelectInput
             control={form.control}
-            name="plan"
-            label="Subscription Plan"
-            options={[
-              { label: "Free", value: "free" },
-              { label: "Pro", value: "pro" },
-              { label: "Enterprise", value: "enterprise" },
-            ]}
-          />
-
-          <SelectInput
-            control={form.control}
-            name="status"
-            label="Status"
-            options={[
-              { label: "Active", value: "active" },
-              { label: "Inactive", value: "inactive" },
-              { label: "Past Due", value: "past_due" },
-            ]}
+            name="planId"
+            label="New Plan"
+            placeholder="Select a plan"
+            options={planOptions}
           />
         </div>
       )}

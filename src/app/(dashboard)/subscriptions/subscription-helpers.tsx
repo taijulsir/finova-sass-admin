@@ -17,15 +17,24 @@ export const useSubscriptionHandlers = (refreshData: () => void) => {
   const handleEditSubscription = useCallback((sub: any) => {
     setSelectedSub(sub);
     setIsEditModalOpen(true);
-    setIsViewModalOpen(false); // Close view if it was open
+    setIsViewModalOpen(false);
   }, []);
 
   const handleArchiveSubscription = useCallback(async (sub: any) => {
-    if (!confirm(`Are you sure you want to ${sub.status === 'active' ? 'cancel' : 'reactivate'} the subscription for ${sub.name}?`)) return;
+    const isCanceled = sub.subscription?.status === 'canceled';
+    const action = isCanceled ? 'reactivate' : 'cancel';
+    
+    if (!confirm(`Are you sure you want to ${action} the subscription for ${sub.name}?`)) return;
     
     try {
-      await AdminService.archiveOrganization(sub._id);
-      toast.success(`Subscription ${sub.status === 'active' ? 'cancelled' : 'reactivated'} successfully`);
+      if (isCanceled) {
+        // Reactivate needs a planId — use current plan or prompt
+        toast.info("Use the 'Change Plan' action to reactivate with a specific plan.");
+        return;
+      }
+
+      await AdminService.cancelSubscription(sub._id);
+      toast.success("Subscription cancelled successfully");
       refreshData();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update subscription");
@@ -33,7 +42,7 @@ export const useSubscriptionHandlers = (refreshData: () => void) => {
   }, [refreshData]);
 
   const handleManageSubscription = useCallback((sub: any) => {
-    toast.info("Opening stripe billing portal (Mock)");
+    toast.info("Subscription management — payment portal integration coming soon.");
     console.log("Manage billing for:", sub._id);
   }, []);
 

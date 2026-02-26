@@ -19,12 +19,72 @@ export const AdminService = {
     const { data } = await api.get(`/admin/organizations/${id}`);
     return data;
   },
+  updateOrganization: async (id: string, orgData: any) => {
+    const { data } = await api.patch(`/admin/organizations/${id}`, orgData);
+    return data;
+  },
+  changeOrgStatus: async (id: string, status: string, reason?: string) => {
+    const { data } = await api.patch(`/admin/organizations/${id}/status`, { status, reason });
+    return data;
+  },
+
+  // ── Subscription management (per organization) ────────────────────────────
+  changeOrgPlan: async (orgId: string, planId: string, reason?: string) => {
+    const { data } = await api.patch(`/admin/organizations/${orgId}/plan`, { planId, reason });
+    return data;
+  },
+  getSubscriptionDetails: async (orgId: string) => {
+    const { data } = await api.get(`/admin/organizations/${orgId}/subscription`);
+    return data;
+  },
+  extendTrial: async (orgId: string, additionalDays: number, reason?: string) => {
+    const { data } = await api.post(`/admin/organizations/${orgId}/subscription/extend-trial`, { additionalDays, reason });
+    return data;
+  },
+  reactivateSubscription: async (orgId: string, planId: string, billingCycle?: string) => {
+    const { data } = await api.post(`/admin/organizations/${orgId}/subscription/reactivate`, { planId, billingCycle });
+    return data;
+  },
+  cancelSubscription: async (orgId: string, reason?: string) => {
+    const { data } = await api.post(`/admin/organizations/${orgId}/subscription/cancel`, { reason });
+    return data;
+  },
+
+  // ── Plans ─────────────────────────────────────────────────────────────────
+  getPlans: async (params: any = { page: 1, limit: 50 }) => {
+    const { data } = await api.get('/plans', { params });
+    return data;
+  },
+  getActivePlans: async () => {
+    const { data } = await api.get('/plans/active');
+    return data;
+  },
+  createPlan: async (planData: any) => {
+    const { data } = await api.post('/plans', planData);
+    return data;
+  },
+  updatePlan: async (id: string, planData: any) => {
+    const { data } = await api.patch(`/plans/${id}`, planData);
+    return data;
+  },
+  archivePlan: async (id: string) => {
+    const { data } = await api.delete(`/plans/${id}`);
+    return data;
+  },
+  seedPlans: async () => {
+    const { data } = await api.post('/plans/seed');
+    return data;
+  },
+
+  // ── Subscriptions list (reuses org listing with subscription enrichment) ──
   getSubscriptions: async (params: any = { page: 1, limit: 10, search: '', isActive: true }) => {
     const { data } = await api.get('/admin/organizations', {
       params,
     });
     return data;
   },
+
+  // ── Users ─────────────────────────────────────────────────────────────────
   getUsers: async (params: any = { page: 1, limit: 10, search: '', tab: 'active' }) => {
     const { data } = await api.get('/admin/users', {
       params,
@@ -105,10 +165,6 @@ export const AdminService = {
   },
   deleteUploadedImage: async (url: string) => {
     const { data } = await api.delete('/upload/image', { data: { url } });
-    return data;
-  },
-  updateSubscription: async (id: string, subData: any) => {
-    const { data } = await api.patch(`/admin/subscriptions/${id}`, subData);
     return data;
   },
 

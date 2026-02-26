@@ -5,10 +5,12 @@ import { TableActionDropdown } from "@/components/ui-system/table-action-dropdow
 import { TbEye, TbEdit, TbArchive, TbTrash } from "react-icons/tb";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+// ── Types ──────────────────────────────────────────────────────────────────
+
 export type Organization = {
   _id: string;
   name: string;
-  plan: string;
+  organizationId?: string; // public ID like org_XXXXX
   status: string;
   logo?: string;
   ownerId: {
@@ -16,6 +18,34 @@ export type Organization = {
     email: string;
   };
   createdAt: string;
+  // Subscription enrichment from backend
+  subscription?: {
+    status: string;
+    planName: string;
+    billingCycle: string;
+    renewalDate?: string;
+    isTrial: boolean;
+    trialEndDate?: string;
+    createdBy: string;
+  };
+};
+
+export type Plan = {
+  _id: string;
+  name: string;
+  slug: string;
+  price: number;
+  billingCycle: string;
+  features: string[];
+  limits: {
+    maxMembers: number;
+    maxLeads: number;
+    maxStorage: number;
+  };
+  trialDays: number;
+  isActive: boolean;
+  sortOrder: number;
+  isPopular: boolean;
 };
 
 export interface Column<T> {
@@ -31,6 +61,18 @@ export interface OrganizationColumnsProps {
   onArchive: (org: Organization) => void;
   onDelete: (org: Organization) => void;
 }
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+const subscriptionStatusStyles: Record<string, string> = {
+  active: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200",
+  trial: "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200",
+  past_due: "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200",
+  canceled: "bg-red-100 text-red-800 hover:bg-red-200 border-red-200",
+  expired: "bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200",
+};
+
+// ── Columns ────────────────────────────────────────────────────────────────
 
 export const getOrganizationColumns = ({
   onView,
@@ -56,7 +98,7 @@ export const getOrganizationColumns = ({
         <div className="flex flex-col">
           <span className="font-medium text-foreground">{org.name}</span>
           <span className="text-xs text-muted-foreground font-mono">
-            {org._id}
+            {org.organizationId || org._id}
           </span>
         </div>
       </div>
@@ -78,27 +120,54 @@ export const getOrganizationColumns = ({
     },
   },
   {
-    accessorKey: "plan",
+    accessorKey: "subscription.planName",
     header: "Plan",
-    cell: (org) => (
-      <Badge variant="outline" className="capitalize bg-muted/30">
-        {org.plan}
-      </Badge>
-    ),
+    cell: (org) => {
+      const sub = org.subscription;
+      return (
+        <div className="flex flex-col gap-0.5">
+          <Badge variant="outline" className="capitalize bg-muted/30 w-fit">
+            {sub?.planName || "No Plan"}
+          </Badge>
+          {sub?.billingCycle && (
+            <span className="text-[10px] text-muted-foreground capitalize">{sub.billingCycle}</span>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "subscription.status",
+    header: "Subscription",
+    cell: (org) => {
+      const sub = org.subscription;
+      const status = sub?.status || "none";
+      return (
+        <div className="flex flex-col gap-0.5">
+          <Badge className={subscriptionStatusStyles[status] || "bg-gray-100 text-gray-600"}>
+            {sub?.isTrial ? "Trial" : status}
+          </Badge>
+          {sub?.isTrial && sub.trialEndDate && (
+            <span className="text-[10px] text-muted-foreground">
+              ends {new Date(sub.trialEndDate).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: (org) => {
       const status = org.status as string;
+      const styles: Record<string, string> = {
+        active: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200",
+        suspended: "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200",
+        archived: "bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200",
+      };
       return (
-        <Badge
-          className={
-            status === "active"
-              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"
-              : "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200"
-          }
-        >
+        <Badge className={styles[status] || "bg-gray-100 text-gray-600"}>
           {status}
         </Badge>
       );
@@ -106,14 +175,12 @@ export const getOrganizationColumns = ({
   },
   {
     accessorKey: "createdAt",
-    header: "Created At",
-    cell: (org) => {
-      return (
-        <span className="text-sm text-muted-foreground tabular-nums">
-          {new Date(org.createdAt).toLocaleDateString()}
-        </span>
-      );
-    },
+    header: "Created",
+    cell: (org) => (
+      <span className="text-sm text-muted-foreground tabular-nums">
+        {new Date(org.createdAt).toLocaleDateString()}
+      </span>
+    ),
   },
   {
     accessorKey: "actions",
@@ -131,7 +198,7 @@ export const getOrganizationColumns = ({
           onClick: () => onEdit(org),
         },
         {
-          label: "Archive Organization",
+          label: org.status === "active" ? "Archive Organization" : "Restore Organization",
           icon: TbArchive,
           onClick: () => onArchive(org),
         },

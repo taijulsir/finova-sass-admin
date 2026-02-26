@@ -1,5 +1,6 @@
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { TbEdit, TbArchive, TbCurrencyDollar } from "react-icons/tb";
 
 interface SubscriptionViewProps {
@@ -10,6 +11,14 @@ interface SubscriptionViewProps {
   onArchive: (sub: any) => void;
 }
 
+const subscriptionStatusStyles: Record<string, string> = {
+  active: "bg-green-100 text-green-800",
+  trial: "bg-blue-100 text-blue-800",
+  past_due: "bg-amber-100 text-amber-800",
+  canceled: "bg-red-100 text-red-800",
+  expired: "bg-gray-100 text-gray-600",
+};
+
 export function SubscriptionView({
   subscription,
   isOpen,
@@ -18,6 +27,8 @@ export function SubscriptionView({
   onArchive,
 }: SubscriptionViewProps) {
   if (!subscription) return null;
+
+  const sub = subscription.subscription;
 
   return (
     <Modal
@@ -32,23 +43,29 @@ export function SubscriptionView({
             <TbCurrencyDollar />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-foreground capitalize">{subscription.plan} Plan</h3>
+            <h3 className="text-xl font-bold text-foreground capitalize">
+              {sub?.planName || "No Plan"} {sub?.isTrial && <span className="text-sm font-normal text-blue-600">(Trial)</span>}
+            </h3>
             <p className="text-sm text-muted-foreground">{subscription.name}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-y-4 gap-x-6">
           <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Plan Type</p>
-            <p className="text-base capitalize font-semibold shadow-sm inline-block px-2 bg-muted/30 rounded border">{subscription.plan}</p>
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Plan</p>
+            <Badge variant="outline" className="capitalize bg-muted/30">
+              {sub?.planName || "None"}
+            </Badge>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Status</p>
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-              subscription.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              {subscription.status}
-            </span>
+            <Badge className={subscriptionStatusStyles[sub?.status] || "bg-gray-100 text-gray-600"}>
+              {sub?.isTrial ? "Trial" : sub?.status || "None"}
+            </Badge>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Billing Cycle</p>
+            <p className="text-base capitalize text-foreground">{sub?.billingCycle || "—"}</p>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Billing Email</p>
@@ -56,14 +73,24 @@ export function SubscriptionView({
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Renewal Date</p>
-            <p className="text-base text-foreground italic flex items-center">
-              N/A <span className="text-[10px] ml-1 bg-muted px-1 rounded">Mock</span>
+            <p className="text-base text-foreground">
+              {sub?.renewalDate ? new Date(sub.renewalDate).toLocaleDateString() : "—"}
             </p>
           </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Source</p>
+            <p className="text-base capitalize text-foreground">{sub?.createdBy || "—"}</p>
+          </div>
+          {sub?.isTrial && sub.trialEndDate && (
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Trial Ends</p>
+              <p className="text-base text-foreground">{new Date(sub.trialEndDate).toLocaleDateString()}</p>
+            </div>
+          )}
           <div className="space-y-1 col-span-2 pt-2">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Organization ID</p>
             <code className="text-[11px] font-mono bg-muted p-1 px-1.5 rounded text-muted-foreground break-all">
-              {subscription._id}
+              {subscription.organizationId || subscription._id}
             </code>
           </div>
         </div>
@@ -81,9 +108,9 @@ export function SubscriptionView({
             className="text-amber-600 hover:text-amber-800 hover:bg-amber-50 border-amber-200"
             onClick={() => onArchive(subscription)}
           >
-            <TbArchive className="mr-2 h-4 w-4" /> Cancel Subscription
+            <TbArchive className="mr-2 h-4 w-4" /> 
+            {sub?.status === "canceled" ? "Reactivate" : "Cancel Subscription"}
           </Button>
-         
         </div>
       </div>
     </Modal>

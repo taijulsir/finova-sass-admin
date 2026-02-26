@@ -4,13 +4,25 @@ import { Badge } from "@/components/ui/badge";
 import { TableActionDropdown } from "@/components/ui-system/table-action-dropdown";
 import { TbEye, TbEdit, TbArchive, TbCurrencyDollar } from "react-icons/tb";
 
-export type Subscription = {
+// This type matches the enriched organization from the backend
+export type SubscriptionRow = {
   _id: string;
   name: string;
-  plan: string;
+  organizationId?: string;
   status: string;
   ownerId?: {
+    name: string;
     email: string;
+  };
+  createdAt: string;
+  subscription?: {
+    status: string;
+    planName: string;
+    billingCycle: string;
+    renewalDate?: string;
+    isTrial: boolean;
+    trialEndDate?: string;
+    createdBy: string;
   };
 };
 
@@ -22,18 +34,26 @@ export interface Column<T> {
 }
 
 export interface SubscriptionColumnsProps {
-  onView: (sub: Subscription) => void;
-  onEdit: (sub: Subscription) => void;
-  onArchive: (sub: Subscription) => void;
-  onManage: (sub: Subscription) => void;
+  onView: (sub: SubscriptionRow) => void;
+  onEdit: (sub: SubscriptionRow) => void;
+  onArchive: (sub: SubscriptionRow) => void;
+  onManage: (sub: SubscriptionRow) => void;
 }
+
+const subscriptionStatusStyles: Record<string, string> = {
+  active: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200",
+  trial: "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200",
+  past_due: "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200",
+  canceled: "bg-red-100 text-red-800 hover:bg-red-200 border-red-200",
+  expired: "bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200",
+};
 
 export const getSubscriptionColumns = ({
   onView,
   onEdit,
   onArchive,
   onManage,
-}: SubscriptionColumnsProps): Column<Subscription>[] => [
+}: SubscriptionColumnsProps): Column<SubscriptionRow>[] => [
   {
     accessorKey: "name",
     header: "Organization",
@@ -50,56 +70,70 @@ export const getSubscriptionColumns = ({
     ),
   },
   {
-    accessorKey: "plan",
+    accessorKey: "subscription.planName",
     header: "Plan",
     cell: (sub) => {
-      const plans: Record<string, string> = {
-        free: "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200",
-        pro: "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200",
-        enterprise: "bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200",
-      };
-      
+      const plan = sub.subscription?.planName || "No Plan";
       return (
-        <Badge variant="outline" className={`capitalize ${plans[sub.plan] || "bg-muted text-muted-foreground"}`}>
-          {sub.plan} Plan
-        </Badge>
+        <div className="flex flex-col gap-0.5">
+          <Badge variant="outline" className="capitalize bg-muted/30 w-fit">
+            {plan}
+          </Badge>
+          {sub.subscription?.billingCycle && (
+            <span className="text-[10px] text-muted-foreground capitalize">{sub.subscription.billingCycle}</span>
+          )}
+        </div>
       );
     },
   },
   {
-    accessorKey: "status",
+    accessorKey: "subscription.status",
     header: "Status",
     cell: (sub) => {
-      const status = sub.status as string;
+      const status = sub.subscription?.status || "none";
       return (
-        <Badge
-          className={
-            status === "active"
-              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"
-              : "bg-red-100 text-red-800 hover:bg-red-200 border-red-200"
-          }
-        >
-          {status}
-        </Badge>
+        <div className="flex flex-col gap-0.5">
+          <Badge className={subscriptionStatusStyles[status] || "bg-gray-100 text-gray-600"}>
+            {sub.subscription?.isTrial ? "Trial" : status}
+          </Badge>
+          {sub.subscription?.isTrial && sub.subscription.trialEndDate && (
+            <span className="text-[10px] text-muted-foreground">
+              ends {new Date(sub.subscription.trialEndDate).toLocaleDateString()}
+            </span>
+          )}
+        </div>
       );
     },
   },
   {
-    header: "Renews On",
-    accessorKey: "renewalDate",
-    cell: () => (
-      <span className="text-sm text-muted-foreground italic flex items-center">
-        Mock Date <span className="text-[10px] ml-1 bg-muted px-1 rounded">N/A</span>
-      </span>
+    header: "Renewal",
+    accessorKey: "subscription.renewalDate",
+    cell: (sub) => {
+      const renewal = sub.subscription?.renewalDate;
+      return (
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {renewal ? new Date(renewal).toLocaleDateString() : "—"}
+        </span>
+      );
+    },
+  },
+  {
+    header: "Source",
+    accessorKey: "subscription.createdBy",
+    cell: (sub) => (
+      <Badge variant="outline" className="capitalize text-xs">
+        {sub.subscription?.createdBy || "—"}
+      </Badge>
     ),
   },
   {
     accessorKey: "actions",
     header: "Actions",
     cell: (sub) => {
+      const subStatus = sub.subscription?.status;
       const actions = [
         {
-          label: "View Billing Details",
+          label: "View Details",
           icon: TbEye,
           onClick: () => onView(sub),
         },
@@ -114,10 +148,10 @@ export const getSubscriptionColumns = ({
           onClick: () => onManage(sub),
         },
         {
-          label: "Cancel Subscription",
+          label: subStatus === "canceled" ? "Reactivate" : "Cancel Subscription",
           icon: TbArchive,
           onClick: () => onArchive(sub),
-          variant: "destructive" as const,
+          variant: subStatus !== "canceled" ? ("destructive" as const) : undefined,
         },
       ];
 

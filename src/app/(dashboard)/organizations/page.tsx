@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AdminService } from '@/services/admin.service';
 import { Plus } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
@@ -9,9 +9,9 @@ import { Pagination } from "@/components/ui-system/pagination";
 import { DataTable } from "@/components/ui-system/table/DataTable";
 import { PageHeader } from "@/components/ui-system/page-header";
 import { FilterSection } from "@/components/ui-system/filter-section";
-import { OrganizationForm, OrganizationFormValues } from "./components/organization-form";
+import { OrganizationForm } from "./components/organization-form";
 import { OrganizationView } from "./components/organization-view";
-import { getOrganizationColumns } from "./organization-utils";
+import { getOrganizationColumns, Plan } from "./organization-utils";
 import { useOrganizationHandlers } from "./organization-helpers";
 import { useFetchData } from "@/hooks/use-fetch-data";
 
@@ -21,6 +21,14 @@ export default function OrganizationsPage() {
   const [limit, setLimit] = useState(10);
   const [activeTab, setActiveTab] = useState('active');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [plans, setPlans] = useState<Plan[]>([]);
+
+  // Fetch available plans for the create form
+  useEffect(() => {
+    AdminService.getPlans({ page: 1, limit: 50 }).then((res) => {
+      setPlans(res.data || []);
+    }).catch(() => {});
+  }, []);
 
   const fetchParams = useMemo(() => ({
     page,
@@ -52,7 +60,7 @@ export default function OrganizationsPage() {
     handleDeleteOrganization
   } = useOrganizationHandlers(refresh);
 
-  const handleFormSubmit = async (data: OrganizationFormValues) => {
+  const handleFormSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
       if (isEditModalOpen && selectedOrganization) {
@@ -136,7 +144,6 @@ export default function OrganizationsPage() {
             setPage(1);
           }}
           itemName="organizations"
-          
         />
       </div>
 
@@ -153,11 +160,16 @@ export default function OrganizationsPage() {
         <OrganizationForm
           isEdit={isEditModalOpen}
           isSubmitting={isSubmitting}
-          defaultValues={selectedOrganization ? {
-            name: selectedOrganization.name,
-            status: selectedOrganization.status,
-            plan: selectedOrganization.plan
-          } : undefined}
+          plans={plans}
+          defaultValues={
+            isEditModalOpen && selectedOrganization
+              ? {
+                  name: selectedOrganization.name,
+                  status: selectedOrganization.status,
+                  logo: selectedOrganization.logo,
+                }
+              : undefined
+          }
           onSubmit={handleFormSubmit}
           onCancel={() => {
             setIsAddModalOpen(false);

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AdminService } from "@/services/admin.service";
-import { Plus } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { toast } from "sonner";
 import { Pagination } from "@/components/ui-system/pagination";
@@ -21,6 +20,14 @@ export default function SubscriptionsPage() {
   const [limit, setLimit] = useState(10);
   const [activeTab, setActiveTab] = useState("active");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [plans, setPlans] = useState<any[]>([]);
+
+  // Fetch available plans for the change plan form
+  useEffect(() => {
+    AdminService.getPlans({ page: 1, limit: 50 }).then((res) => {
+      setPlans(res.data || []);
+    }).catch(() => {});
+  }, []);
 
   const fetchParams = useMemo(
     () => ({
@@ -52,18 +59,18 @@ export default function SubscriptionsPage() {
     handleManageSubscription,
   } = useSubscriptionHandlers(refresh);
 
-  const handleUpdateSubscription = async (data: SubscriptionFormValues) => {
+  const handleChangePlan = async (data: SubscriptionFormValues) => {
     if (!selectedSub) return;
 
     setIsSubmitting(true);
     try {
-      await AdminService.updateOrganization(selectedSub._id, { plan: data.plan });
-      toast.success("Subscription updated successfully");
+      await AdminService.changeOrgPlan(selectedSub._id, data.planId, data.reason);
+      toast.success("Subscription plan updated successfully");
       setIsEditModalOpen(false);
       refresh();
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.response?.data?.message || "Failed to update subscription");
+      toast.error(error?.response?.data?.message || "Failed to change plan");
     } finally {
       setIsSubmitting(false);
     }
@@ -86,11 +93,6 @@ export default function SubscriptionsPage() {
         <PageHeader
           title="Subscriptions"
           description="Monitor and manage all organization subscriptions and billing plans."
-          action={{
-            label: "Create Custom Plan",
-            icon: Plus,
-            onClick: () => toast.info("Custom plan creation would go here (Mock)"),
-          }}
         />
       </div>
 
@@ -109,7 +111,7 @@ export default function SubscriptionsPage() {
           }}
           tabs={[
             { label: "Active", value: "active" },
-            { label: "Cancelled", value: "archived" },
+            { label: "Archived", value: "archived" },
           ]}
         />
       </div>
@@ -135,27 +137,21 @@ export default function SubscriptionsPage() {
             setPage(1);
           }}
           itemName="subscriptions"
-          
         />
       </div>
 
-      {/* Edit/Change Plan Modal */}
+      {/* Change Plan Modal */}
       <Modal
         title="Change Subscription Plan"
-        description={`Modify the subscription for ${selectedSub?.name}.`}
+        description={`Modify the subscription for ${selectedSub?.name || "organization"}.`}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
       >
         <SubscriptionForm
           isSubmitting={isSubmitting}
-          defaultValues={
-            selectedSub
-              ? {
-                  plan: selectedSub.plan,
-                }
-              : undefined
-          }
-          onSubmit={handleUpdateSubscription}
+          plans={plans}
+          orgName={selectedSub?.name}
+          onSubmit={handleChangePlan}
           onCancel={() => setIsEditModalOpen(false)}
         />
       </Modal>
