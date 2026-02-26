@@ -84,7 +84,7 @@ export const AdminService = {
     return data;
   },
   seedPlans: async () => {
-    const { data } = await api.post('/plans/seed');
+    const { data } = await api.post('/admin/plans/seed');
     return data;
   },
 
