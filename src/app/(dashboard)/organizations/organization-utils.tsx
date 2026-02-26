@@ -114,6 +114,7 @@ export interface Column<T> {
   accessorKey: keyof T | string;
   cell?: (item: T) => React.ReactNode;
   className?: string;
+  isAction?: boolean;
 }
 
 export interface OrganizationColumnsProps {
@@ -374,6 +375,7 @@ export const getOrganizationColumns = ({
   {
     accessorKey: "actions",
     header: "Actions",
+    isAction: true,
     cell: (org) => {
       const sub = org.subscription;
       const actions = [

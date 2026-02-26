@@ -100,7 +100,7 @@ export function DetailView({
           {description && <SheetDescription>{description}</SheetDescription>}
         </SheetHeader>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 overflow-hidden">
           <div className="px-6 py-5 space-y-6">
             {/* Warnings */}
             {warnings.length > 0 && (
