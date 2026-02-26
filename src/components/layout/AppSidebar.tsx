@@ -164,14 +164,14 @@ export function AppSidebar() {
       </SidebarHeader>
 
       {/* ── Navigation ────────────────────────────────────────────────────── */}
-      <SidebarContent className="px-2 py-2">
+      <SidebarContent className="px-2 py-2 gap-0">
         {visibleGroups.map((group, groupIdx) => (
           <React.Fragment key={group.label}>
-            {groupIdx > 0 && <SidebarSeparator className="my-0.5 mx-2 opacity-40" />}
+            {groupIdx > 0 && <SidebarSeparator className="my-1 mx-2 opacity-40" />}
 
-            <SidebarGroup className="py-0.5">
+            <SidebarGroup className="py-0 p-0 px-0">
               {/* Section label — hidden in icon-only mode via group-data-[collapsible=icon] */}
-              <SidebarGroupLabel className="px-3 mb-0.5 text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 group-data-[collapsible=icon]:hidden select-none">
+              <SidebarGroupLabel className="px-3 h-6 mb-0 text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 group-data-[collapsible=icon]:hidden select-none">
                 {group.label}
               </SidebarGroupLabel>
 
