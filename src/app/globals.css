@@ -48,35 +48,35 @@
 }
 
 /* ============================================================
-   FINOVA – LIGHT MODE (clean enterprise green)
+   FINOVA – LIGHT MODE (clean neutral enterprise)
    ============================================================ */
 :root {
   --radius: 0.625rem;
 
   /* Surfaces */
-  --background:           #F6FBF9;
+  --background:           #F7F8FA;
   --card:                 #FFFFFF;
   --popover:              #FFFFFF;
-  --secondary:            #EDF7F2;
-  --muted:                #EDF7F2;
+  --secondary:            #F1F3F7;
+  --muted:                #F1F3F7;
 
   /* Text */
-  --foreground:           #0F2A21;
-  --card-foreground:      #0F2A21;
-  --popover-foreground:   #0F2A21;
-  --secondary-foreground: #0F2A21;
-  --muted-foreground:     #7A9A91;
-  --accent-foreground:    #0F2A21;
+  --foreground:           #111827;
+  --card-foreground:      #111827;
+  --popover-foreground:   #111827;
+  --secondary-foreground: #111827;
+  --muted-foreground:     #6B7280;
+  --accent-foreground:    #111827;
 
-  /* Brand */
-  --primary:              #16A34A;   /* Darker green — readable on white */
+  /* Brand — used only for buttons / highlights */
+  --primary:              #16A34A;
   --primary-foreground:   #FFFFFF;
 
   /* UI chrome */
-  --accent:               #EDF7F2;
+  --accent:               #F1F3F7;
   --destructive:          #DC2626;
-  --border:               #E6F2ED;
-  --input:                #E6F2ED;
+  --border:               #E8EAF0;
+  --input:                #E8EAF0;
   --ring:                 #16A34A;
 
   /* Charts */
@@ -84,44 +84,44 @@
   --chart-2:              #4DA8FF;
   --chart-3:              #F5B942;
   --chart-4:              #FF5C5C;
-  --chart-5:              #A3E7C5;
+  --chart-5:              #6366F1;
 
   /* Sidebar */
   --sidebar:              #FFFFFF;
-  --sidebar-foreground:   #0F2A21;
+  --sidebar-foreground:   #111827;
   --sidebar-primary:      #16A34A;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent:       rgba(22, 163, 74, 0.08);
-  --sidebar-accent-foreground: #0F2A21;
-  --sidebar-border:       #E6F2ED;
+  --sidebar-accent-foreground: #111827;
+  --sidebar-border:       #E8EAF0;
   --sidebar-ring:         #16A34A;
 }
 
 /* ============================================================
-   FINOVA – DARK MODE (tinted emerald dark, subtle depth)
+   FINOVA – DARK MODE (neutral charcoal, accent-only highlights)
    ============================================================ */
 .dark {
-  /* Surfaces */
-  --background:           #0B1412;
-  --card:                 #142420;
-  --popover:              #111C19;
-  --secondary:            #18302A;
-  --muted:                #18302A;
+  /* Surfaces — layered depth */
+  --background:           #0F1115;
+  --card:                 #171A21;
+  --popover:              #13161C;
+  --secondary:            #1D212A;
+  --muted:                #1D212A;
 
-  /* Text */
-  --foreground:           #E8F5F0;
-  --card-foreground:      #E8F5F0;
-  --popover-foreground:   #E8F5F0;
-  --secondary-foreground: #E8F5F0;
-  --muted-foreground:     #6C8F85;
-  --accent-foreground:    #E8F5F0;
+  /* Text — warm neutral, never pure white */
+  --foreground:           #E6E8EC;
+  --card-foreground:      #E6E8EC;
+  --popover-foreground:   #E6E8EC;
+  --secondary-foreground: #E6E8EC;
+  --muted-foreground:     #6C7380;
+  --accent-foreground:    #E6E8EC;
 
-  /* Brand */
+  /* Brand accent — used only for interactive / highlight */
   --primary:              #55FFAA;
-  --primary-foreground:   #0B1412;
+  --primary-foreground:   #0F1115;
 
   /* UI chrome */
-  --accent:               #18302A;
+  --accent:               #1D212A;
   --destructive:          #FF5C5C;
   --border:               rgba(255, 255, 255, 0.06);
   --input:                rgba(255, 255, 255, 0.07);
@@ -132,15 +132,15 @@
   --chart-2:              #4DA8FF;
   --chart-3:              #F5B942;
   --chart-4:              #FF5C5C;
-  --chart-5:              #A3E7C5;
+  --chart-5:              #818CF8;
 
   /* Sidebar */
-  --sidebar:              #111C19;
-  --sidebar-foreground:   #A7CFC2;
+  --sidebar:              #12151B;
+  --sidebar-foreground:   #A0A6B1;
   --sidebar-primary:      #55FFAA;
-  --sidebar-primary-foreground: #0B1412;
+  --sidebar-primary-foreground: #0F1115;
   --sidebar-accent:       rgba(85, 255, 170, 0.08);
-  --sidebar-accent-foreground: #E8F5F0;
+  --sidebar-accent-foreground: #E6E8EC;
   --sidebar-border:       rgba(255, 255, 255, 0.05);
   --sidebar-ring:         #55FFAA;
 }
@@ -157,40 +157,38 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* ── Subtle depth glow on body (dark only) ─────────────────────────────── */
-  .dark body {
-    background-image:
-      radial-gradient(circle at 15% 10%, rgba(85, 255, 170, 0.05), transparent 40%),
-      radial-gradient(circle at 85% 90%, rgba(85, 255, 170, 0.04), transparent 50%);
-    background-attachment: fixed;
-  }
-
   /* ── Card hover depth (dark) ─────────────────────────────────────────────── */
   .dark [data-slot="card"] {
-    background-color: #142420;
-    border-color: rgba(255, 255, 255, 0.04);
-    transition: border-color 0.15s ease;
+    background-color: #171A21;
+    border-color: rgba(255, 255, 255, 0.05);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
   }
   .dark [data-slot="card"]:hover {
-    border-color: rgba(85, 255, 170, 0.15);
+    background-color: #1D212A;
+    border-color: rgba(255, 255, 255, 0.1);
   }
 
   /* ── Table refinements ───────────────────────────────────────────────────── */
   .dark [role="row"]:hover td,
   .dark [role="row"]:hover th {
-    background-color: rgba(85, 255, 170, 0.04);
+    background-color: rgba(255, 255, 255, 0.04);
   }
   .dark thead tr,
   .dark [role="rowgroup"]:first-child [role="row"] {
-    background-color: #101A17;
+    background-color: #151922;
   }
 
   /* ── Sidebar active item indicator (dark) ───────────────────────────────── */
   .dark [data-active="true"][data-sidebar="menu-button"] {
     background-color: rgba(85, 255, 170, 0.08) !important;
     border-left: 2px solid #55FFAA;
-    padding-left: calc(0.75rem - 2px);  /* compensate for border */
-    color: #E8F5F0;
+    padding-left: calc(0.75rem - 2px);
+    color: #E6E8EC;
+  }
+
+  /* ── Sidebar hover (dark) ────────────────────────────────────────────────── */
+  .dark [data-sidebar="menu-button"]:not([data-active="true"]):hover {
+    background-color: rgba(255, 255, 255, 0.05);
   }
 
   /* ── Sidebar active item indicator (light) ──────────────────────────────── */
@@ -198,17 +196,17 @@
     background-color: rgba(22, 163, 74, 0.08) !important;
     border-left: 2px solid #16A34A;
     padding-left: calc(0.75rem - 2px);
-    color: #0F2A21;
+    color: #111827;
   }
 
   /* ── Scrollbar thinning (dark) ───────────────────────────────────────────── */
   .dark ::-webkit-scrollbar { width: 5px; height: 5px; }
   .dark ::-webkit-scrollbar-track { background: transparent; }
   .dark ::-webkit-scrollbar-thumb {
-    background-color: rgba(85, 255, 170, 0.12);
+    background-color: rgba(255, 255, 255, 0.1);
     border-radius: 9999px;
   }
   .dark ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(85, 255, 170, 0.22);
+    background-color: rgba(255, 255, 255, 0.2);
   }
 }
