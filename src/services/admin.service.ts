@@ -27,6 +27,14 @@ export const AdminService = {
     const { data } = await api.patch(`/admin/organizations/${id}/status`, { status, reason });
     return data;
   },
+  suspendOrganization: async (id: string, reason?: string) => {
+    const { data } = await api.patch(`/admin/organizations/${id}/status`, { status: 'suspended', reason });
+    return data;
+  },
+  reactivateOrganization: async (id: string) => {
+    const { data } = await api.patch(`/admin/organizations/${id}/status`, { status: 'active' });
+    return data;
+  },
 
   // ── Subscription management (per organization) ────────────────────────────
   changeOrgPlan: async (orgId: string, planId: string, reason?: string) => {
@@ -36,6 +44,10 @@ export const AdminService = {
   getSubscriptionDetails: async (orgId: string) => {
     const { data } = await api.get(`/admin/organizations/${orgId}/subscription`);
     return data;
+  },
+  getSubscriptionHistory: async (orgId: string) => {
+    const { data } = await api.get(`/admin/organizations/${orgId}/subscription`);
+    return data; // returns { subscription, history }
   },
   extendTrial: async (orgId: string, additionalDays: number, reason?: string) => {
     const { data } = await api.post(`/admin/organizations/${orgId}/subscription/extend-trial`, { additionalDays, reason });

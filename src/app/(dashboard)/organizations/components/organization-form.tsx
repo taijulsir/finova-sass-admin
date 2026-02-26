@@ -13,16 +13,15 @@ export const createOrganizationSchema = z.object({
   logo: z.string().optional(),
   ownerEmail: z
     .string()
-    .optional()
-    .transform((v) => (v === "" ? undefined : v))
-    .pipe(z.string().email("Invalid email address").optional()),
+    .min(1, "Owner email is required")
+    .email("Invalid email address"),
   ownerName: z
     .string()
     .optional()
     .transform((v) => (v === "" ? undefined : v))
     .pipe(z.string().min(2, "Name must be at least 2 characters").optional()),
-  planId: z.string().optional(),
-  billingCycle: z.enum(["monthly", "yearly"]).optional().default("monthly"),
+  planId: z.string().min(1, "Select a plan"),
+  billingCycle: z.enum(["MONTHLY", "YEARLY"]).default("MONTHLY"),
   isTrial: z.boolean().optional().default(false),
   trialDays: z.coerce.number().min(1).max(365).optional(),
   notes: z.string().max(1000).optional(),
@@ -58,8 +57,9 @@ export function OrganizationForm({
 }: OrganizationFormProps) {
   const schema = isEdit ? editOrganizationSchema : createOrganizationSchema;
 
-  const planOptions = plans.map((p) => ({
-    label: `${p.name} — $${p.price}/${p.billingCycle === "yearly" ? "yr" : "mo"}`,
+  const activePlans = plans.filter((p) => p.isActive);
+  const planOptions = activePlans.map((p) => ({
+    label: `${p.name} — $${p.price}/${p.billingCycle === "YEARLY" ? "yr" : "mo"}`,
     value: p._id,
   }));
 
@@ -70,27 +70,49 @@ export function OrganizationForm({
       onSubmit={onSubmit}
       onCancel={onCancel}
       isSubmitting={isSubmitting}
-      submitLabel={isEdit ? "Update" : "Create"}
+      submitLabel={isEdit ? "Update" : "Create Organization"}
     >
       {(form) => (
         <div className="space-y-6 py-4">
-          <div className="flex justify-center">
-            <Controller
-              control={form.control}
-              name="logo"
-              render={({ field }) => (
-                <ImageUploader
-                  value={field.value}
-                  onChange={field.onChange}
-                  shape="square"
-                  folder="organizations"
-                  width={400}
-                  height={400}
-                  label="Organization Logo"
-                />
-              )}
-            />
-          </div>
+          {!isEdit && (
+            <div className="flex justify-center">
+              <Controller
+                control={form.control}
+                name="logo"
+                render={({ field }) => (
+                  <ImageUploader
+                    value={field.value}
+                    onChange={field.onChange}
+                    shape="square"
+                    folder="organizations"
+                    width={400}
+                    height={400}
+                    label="Organization Logo"
+                  />
+                )}
+              />
+            </div>
+          )}
+
+          {isEdit && (
+            <div className="flex justify-center">
+              <Controller
+                control={form.control}
+                name="logo"
+                render={({ field }) => (
+                  <ImageUploader
+                    value={field.value}
+                    onChange={field.onChange}
+                    shape="square"
+                    folder="organizations"
+                    width={400}
+                    height={400}
+                    label="Organization Logo"
+                  />
+                )}
+              />
+            </div>
+          )}
 
           <div className="grid gap-4">
             <ShortTextInput
@@ -115,35 +137,33 @@ export function OrganizationForm({
                   <ShortTextInput
                     control={form.control}
                     name="ownerEmail"
-                    label="Owner Email Address"
+                    label="Owner Email *"
                     placeholder="john@example.com"
                     disabled={isSubmitting}
                   />
                 </div>
 
-                {planOptions.length > 0 && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <SelectInput
-                      control={form.control}
-                      name="planId"
-                      label="Plan"
-                      placeholder="Select a plan"
-                      options={planOptions}
-                      disabled={isSubmitting}
-                    />
-                    <SelectInput
-                      control={form.control}
-                      name="billingCycle"
-                      label="Billing Cycle"
-                      placeholder="Select cycle"
-                      options={[
-                        { label: "Monthly", value: "monthly" },
-                        { label: "Yearly", value: "yearly" },
-                      ]}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                )}
+                <div className="grid grid-cols-2 gap-4">
+                  <SelectInput
+                    control={form.control}
+                    name="planId"
+                    label="Plan *"
+                    placeholder="Select a plan"
+                    options={planOptions}
+                    disabled={isSubmitting}
+                  />
+                  <SelectInput
+                    control={form.control}
+                    name="billingCycle"
+                    label="Billing Cycle"
+                    placeholder="Select cycle"
+                    options={[
+                      { label: "Monthly", value: "MONTHLY" },
+                      { label: "Yearly", value: "YEARLY" },
+                    ]}
+                    disabled={isSubmitting}
+                  />
+                </div>
 
                 {/* Trial toggle */}
                 <Controller
@@ -184,7 +204,7 @@ export function OrganizationForm({
                   control={form.control}
                   name="notes"
                   label="Internal Notes (optional)"
-                  placeholder="e.g. Marketing campaign lead, VIP partner..."
+                  placeholder="e.g. VIP partner, marketing campaign lead..."
                   disabled={isSubmitting}
                 />
               </>
