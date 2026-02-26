@@ -23,30 +23,45 @@ interface UserModalsProps {
 export function UserModals({ actions, onRefresh }: UserModalsProps) {
   return (
     <>
-      {/* ── Invite / Edit Modal ──────────────────────────────────────── */}
+      {/* ── Invite Modal ─────────────────────────────────────────────── */}
       <Modal
-        title={actions.editModal ? "Edit User" : "Invite User"}
-        description={actions.editModal ? "Update user account details." : "Send an invitation email to the invitee."}
-        isOpen={actions.addModal || actions.editModal}
-        onClose={() => { actions.closeAdd(); actions.closeEdit(); }}
+        title="Invite User"
+        description="Send an invitation email to the invitee."
+        isOpen={actions.addModal}
+        onClose={actions.closeAdd}
       >
         <UserForm
-          key={actions.selectedUser?._id ?? "new"}
-          isEdit={actions.editModal}
+          key="new"
+          isEdit={false}
           isSubmitting={actions.isSubmitting}
-          defaultValues={
-            actions.selectedUser
-              ? {
-                  name: actions.selectedUser.name,
-                  email: actions.selectedUser.email,
-                  avatar: actions.selectedUser.avatar,
-                  globalRole: actions.selectedUser.globalRole ?? "USER",
-                }
-              : undefined
-          }
+          defaultValues={undefined}
           onSubmit={actions.handleFormSubmit}
-          onCancel={() => { actions.closeAdd(); actions.closeEdit(); }}
+          onCancel={actions.closeAdd}
         />
+      </Modal>
+
+      {/* ── Edit Modal ───────────────────────────────────────────────── */}
+      <Modal
+        title="Edit User"
+        description="Update user account details."
+        isOpen={actions.editModal}
+        onClose={actions.closeEdit}
+      >
+        {actions.editModal && actions.selectedUser && (
+          <UserForm
+            key={actions.selectedUser._id}
+            isEdit={true}
+            isSubmitting={actions.isSubmitting}
+            defaultValues={{
+              name: actions.selectedUser.name,
+              email: actions.selectedUser.email,
+              avatar: actions.selectedUser.avatar,
+              globalRole: actions.selectedUser.globalRole ?? "USER",
+            }}
+            onSubmit={actions.handleFormSubmit}
+            onCancel={actions.closeEdit}
+          />
+        )}
       </Modal>
 
       {/* ── User Details Drawer ──────────────────────────────────────── */}
