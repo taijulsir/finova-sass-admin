@@ -3,13 +3,21 @@
 import * as React from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "./ThemeToggle";
-import { Bell, Search, User } from "lucide-react";
+import {
+  Bell,
+  LogOut,
+  Search,
+  Settings,
+  Shield,
+  User,
+  UserCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -82,13 +90,67 @@ export function TopNav() {
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-64 p-0">
+            {/* ── User info header ── */}
+            <div className="px-4 py-3 border-b border-muted">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                  <User className="h-4.5 w-4.5 text-muted-foreground" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-medium truncate">
+                    {user?.name ?? "Admin User"}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {user?.email ?? "admin@finova.io"}
+                  </span>
+                </div>
+              </div>
+              {user?.role && (
+                <div className="mt-2">
+                  <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    {user.role}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* ── Navigation ── */}
+            <DropdownMenuGroup className="p-1.5">
+              <DropdownMenuItem
+                className="gap-2.5 rounded-lg px-2.5 py-2 cursor-pointer"
+                onClick={() => router.push("/profile")}
+              >
+                <UserCircle className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2.5 rounded-lg px-2.5 py-2 cursor-pointer"
+                onClick={() => router.push("/settings/account")}
+              >
+                <Settings className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Account Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2.5 rounded-lg px-2.5 py-2 cursor-pointer"
+                onClick={() => router.push("/settings")}
+              >
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Platform Settings</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+
+            {/* ── Log out ── */}
+            <DropdownMenuSeparator className="my-0" />
+            <div className="p-1.5">
+              <DropdownMenuItem
+                className="gap-2.5 rounded-lg px-2.5 py-2 text-destructive focus:text-destructive cursor-pointer"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="text-sm">Log out</span>
+              </DropdownMenuItem>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
