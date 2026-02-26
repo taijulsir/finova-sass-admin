@@ -208,6 +208,7 @@ export default function PlansPage() {
         description="Add a new subscription plan to the platform."
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        size="lg"
       >
         <PlanForm
           isSubmitting={isSubmitting}
@@ -222,6 +223,7 @@ export default function PlansPage() {
         description={`Update details for ${selectedPlan?.name || "plan"}.`}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
+        size="lg"
       >
         <PlanForm
           isSubmitting={isSubmitting}

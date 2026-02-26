@@ -25,6 +25,7 @@ interface FormFieldProps<T extends FieldValues> {
   type?: "text" | "number" | "password" | "email";
   description?: string;
   disabled?: boolean;
+  rows?: number;
 }
 
 export function ShortTextInput<T extends FieldValues>({
@@ -64,6 +65,7 @@ export function LongTextInput<T extends FieldValues>({
   label,
   placeholder,
   disabled,
+  rows,
 }: FormFieldProps<T>) {
   return (
     <FormField
@@ -78,6 +80,7 @@ export function LongTextInput<T extends FieldValues>({
               value={field.value ?? ''}
               placeholder={placeholder}
               disabled={disabled}
+              rows={rows}
               className="resize-none"
             />
           </FormControl>

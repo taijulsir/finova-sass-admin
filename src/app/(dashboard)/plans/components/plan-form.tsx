@@ -3,6 +3,7 @@ import { FormContainer } from "@/components/ui-system/form-container";
 import { ShortTextInput, SelectInput, LongTextInput } from "@/components/ui-system/form-fields";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ export const planSchema = z.object({
   maxMembers: z.coerce.number().min(1).default(5),
   maxLeads: z.coerce.number().min(0).default(100),
   maxStorage: z.coerce.number().min(0).default(1024), // in MB
-  // features as comma-separated text
+  // features as newline-separated text
   featuresText: z.string().optional().default(""),
 });
 
@@ -31,6 +32,16 @@ interface PlanFormProps {
   onCancel: () => void;
   isSubmitting: boolean;
   isEdit?: boolean;
+}
+
+// ── Section label helper ───────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+      {children}
+    </p>
+  );
 }
 
 export function PlanForm({
@@ -50,69 +61,118 @@ export function PlanForm({
       submitLabel={isEdit ? "Update Plan" : "Create Plan"}
     >
       {(form) => (
-        <div className="space-y-6 py-4">
-          <div className="grid gap-4">
-            {/* Name */}
-            <ShortTextInput
-              control={form.control}
-              name="name"
-              label="Plan Name"
-              placeholder="e.g. Starter, Pro, Enterprise"
-              disabled={isSubmitting}
-            />
+        <div className="grid grid-cols-2 gap-x-8 gap-y-0 py-2">
 
-            {/* Description */}
-            <LongTextInput
-              control={form.control}
-              name="description"
-              label="Description"
-              placeholder="Brief description of this plan"
-              disabled={isSubmitting}
-            />
+          {/* ── LEFT COLUMN ─────────────────────────────── */}
+          <div className="space-y-5">
+
+            {/* General */}
+            <div>
+              <SectionLabel>General</SectionLabel>
+              <div className="space-y-3">
+                <ShortTextInput
+                  control={form.control}
+                  name="name"
+                  label="Plan Name"
+                  placeholder="e.g. Starter, Pro, Enterprise"
+                  disabled={isSubmitting}
+                />
+                <LongTextInput
+                  control={form.control}
+                  name="description"
+                  label="Description"
+                  placeholder="Brief description of this plan"
+                  disabled={isSubmitting}
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <Separator />
 
             {/* Pricing */}
-            <div className="grid grid-cols-2 gap-4">
-              <ShortTextInput
-                control={form.control}
-                name="price"
-                label="Monthly Price ($)"
-                placeholder="29"
-                disabled={isSubmitting}
-              />
-              <ShortTextInput
-                control={form.control}
-                name="yearlyPrice"
-                label="Yearly Price ($)"
-                placeholder="290"
-                disabled={isSubmitting}
-              />
+            <div>
+              <SectionLabel>Pricing</SectionLabel>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <ShortTextInput
+                    control={form.control}
+                    name="price"
+                    label="Monthly Price ($)"
+                    placeholder="29"
+                    disabled={isSubmitting}
+                  />
+                  <ShortTextInput
+                    control={form.control}
+                    name="yearlyPrice"
+                    label="Yearly Price ($)"
+                    placeholder="290"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <SelectInput
+                    control={form.control}
+                    name="billingCycle"
+                    label="Default Billing Cycle"
+                    options={[
+                      { label: "Monthly", value: "monthly" },
+                      { label: "Yearly", value: "yearly" },
+                    ]}
+                    disabled={isSubmitting}
+                  />
+                  <ShortTextInput
+                    control={form.control}
+                    name="trialDays"
+                    label="Trial Days"
+                    placeholder="14"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Billing cycle & trial */}
-            <div className="grid grid-cols-2 gap-4">
-              <SelectInput
-                control={form.control}
-                name="billingCycle"
-                label="Default Billing Cycle"
-                options={[
-                  { label: "Monthly", value: "monthly" },
-                  { label: "Yearly", value: "yearly" },
-                ]}
-                disabled={isSubmitting}
-              />
-              <ShortTextInput
-                control={form.control}
-                name="trialDays"
-                label="Trial Days"
-                placeholder="14"
-                disabled={isSubmitting}
-              />
-            </div>
+            <Separator />
 
-            {/* Limits */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Limits</Label>
-              <div className="grid grid-cols-3 gap-4">
+            {/* Meta */}
+            <div>
+              <SectionLabel>Settings</SectionLabel>
+              <div className="space-y-3">
+                <ShortTextInput
+                  control={form.control}
+                  name="sortOrder"
+                  label="Sort Order"
+                  placeholder="0"
+                  disabled={isSubmitting}
+                />
+                {/* isPublic checkbox */}
+                <label className="flex items-start gap-3 cursor-pointer rounded-lg border p-3 hover:bg-muted/40 transition-colors">
+                  <Checkbox
+                    checked={form.watch("isPublic")}
+                    onCheckedChange={(checked) =>
+                      form.setValue("isPublic", checked === true)
+                    }
+                    disabled={isSubmitting}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <p className="text-sm font-medium leading-none">Public plan</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Visible on the public pricing page
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* ── RIGHT COLUMN ────────────────────────────── */}
+          <div className="space-y-5">
+
+            {/* Usage Limits */}
+            <div>
+              <SectionLabel>Usage Limits</SectionLabel>
+              <div className="space-y-3">
                 <ShortTextInput
                   control={form.control}
                   name="maxMembers"
@@ -137,34 +197,22 @@ export function PlanForm({
               </div>
             </div>
 
+            <Separator />
+
             {/* Features */}
-            <LongTextInput
-              control={form.control}
-              name="featuresText"
-              label="Features (one per line)"
-              placeholder={"CRM Access\nEmail Support\nBasic Analytics"}
-              disabled={isSubmitting}
-            />
-
-            {/* Sort order */}
-            <ShortTextInput
-              control={form.control}
-              name="sortOrder"
-              label="Sort Order"
-              placeholder="0"
-              disabled={isSubmitting}
-            />
-
-            {/* isPublic checkbox */}
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={form.watch("isPublic")}
-                onCheckedChange={(checked) =>
-                  form.setValue("isPublic", checked === true)
-                }
+            <div>
+              <SectionLabel>Features</SectionLabel>
+              <LongTextInput
+                control={form.control}
+                name="featuresText"
+                label="Features (one per line)"
+                placeholder={"CRM Access\nEmail Support\nBasic Analytics\nCustom Branding"}
                 disabled={isSubmitting}
+                rows={10}
               />
-              <Label className="text-sm">Visible on public pricing page</Label>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Each line becomes a feature bullet shown to users.
+              </p>
             </div>
           </div>
         </div>
