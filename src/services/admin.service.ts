@@ -98,9 +98,12 @@ export const AdminService = {
 
   // ── Users ─────────────────────────────────────────────────────────────────
   getUsers: async (params: any = { page: 1, limit: 10, search: '', tab: 'active' }) => {
-    const { data } = await api.get('/admin/users', {
-      params,
-    });
+    // Strip undefined/empty values so URL stays clean
+    const clean: Record<string, string | number> = {};
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null && v !== '') clean[k] = v as string | number;
+    }
+    const { data } = await api.get('/admin/users', { params: clean });
     return data;
   },
   checkEmail: async (email: string) => {

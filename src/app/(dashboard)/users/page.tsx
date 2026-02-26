@@ -10,18 +10,32 @@ import { FilterSection } from "@/components/ui-system/filter-section";
 import { getUserColumns } from "./user-columns";
 import { USER_TABS } from "./user-constants";
 import { useUserActions } from "./hooks/use-user-actions";
+import { useUserFilters } from "./hooks/use-user-filters";
 import { UserModals } from "./components/user-modals";
+import { UserFilterPanel } from "./components/user-filter-panel";
+import { UserFilterChips } from "./components/user-filter-chips";
 import { useFetchData } from "@/hooks/use-fetch-data";
 import type { User } from "./user-types";
 
 export default function UsersPage() {
-  const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('active');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
-  const fetchParams = useMemo(() => ({ page, limit, search, tab: activeTab }), [page, limit, search, activeTab]);
-  const { data: users, loading, totalItems, totalPages, refresh } = useFetchData<User>(AdminService.getUsers, fetchParams);
+  // ── Advanced filter state (includes debounced search + URL sync) ──────────
+  const filterState = useUserFilters();
+
+  const fetchParams = useMemo(() => ({
+    page,
+    limit,
+    tab: activeTab,
+    ...filterState.fetchFilters,
+  }), [page, limit, activeTab, filterState.fetchFilters]);
+
+  const { data: users, loading, totalItems, totalPages, refresh } = useFetchData<User>(
+    AdminService.getUsers,
+    fetchParams
+  );
 
   const actions = useUserActions(refresh);
 
@@ -53,16 +67,26 @@ export default function UsersPage() {
         />
       </div>
 
+      {/* ── Search + Tabs + Filter button ─────────────────────────────────── */}
       <div className="px-6 shrink-0">
         <FilterSection
           searchPlaceholder="Search users by name or email..."
-          searchValue={search}
-          onSearchChange={(val) => { setSearch(val); setPage(1); }}
+          searchValue={filterState.search}
+          onSearchChange={(val) => { filterState.setSearch(val); setPage(1); }}
           activeTab={activeTab}
-          onTabChange={(val) => { setActiveTab(val); setPage(1); setSearch(''); }}
+          onTabChange={(val) => { setActiveTab(val); setPage(1); filterState.resetFilters(); }}
           tabs={USER_TABS as any}
-        />
+        >
+          <UserFilterPanel filterState={filterState} />
+        </FilterSection>
       </div>
+
+      {/* ── Active filter chips ───────────────────────────────────────────── */}
+      {filterState.hasActive && (
+        <div className="px-6 shrink-0 -mt-2">
+          <UserFilterChips filterState={filterState} totalItems={totalItems} />
+        </div>
+      )}
 
       <div className="flex-1 overflow-hidden px-6">
         <DataTable columns={columns as any} data={users} loading={loading} onRowClick={actions.handleOpenView} />
@@ -84,3 +108,4 @@ export default function UsersPage() {
     </div>
   );
 }
+
