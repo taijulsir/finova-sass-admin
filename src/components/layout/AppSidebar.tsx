@@ -177,10 +177,16 @@ export function AppSidebar() {
 
               <SidebarMenu>
                 {group.items.map((item) => {
+                  // Check if another sibling in the same group is a child route of this item
+                  const hasChildSibling = group.items.some(
+                    (other) => other.url !== item.url && other.url.startsWith(item.url + "/")
+                  );
                   const isActive =
                     item.url === "/"
                       ? pathname === "/"
-                      : pathname === item.url || pathname.startsWith(item.url + "/");
+                      : hasChildSibling
+                        ? pathname === item.url          // exact match only when a child sibling exists
+                        : pathname === item.url || pathname.startsWith(item.url + "/");
 
                   return (
                     <SidebarMenuItem key={item.title}>
