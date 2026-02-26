@@ -31,21 +31,21 @@ import {
 } from "react-icons/tb";
 
 const STATUS_STYLES: Record<SubscriptionStatus, string> = {
-  ACTIVE: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  TRIAL: "bg-blue-100 text-blue-800 border-blue-200",
-  PAST_DUE: "bg-amber-100 text-amber-800 border-amber-200",
-  CANCELED: "bg-red-100 text-red-800 border-red-200",
-  EXPIRED: "bg-gray-100 text-gray-600 border-gray-200",
+  ACTIVE:   "bg-green-50 text-green-700 border-green-200 dark:bg-[#36E59A]/10 dark:text-[#36E59A] dark:border-[#36E59A]/20",
+  TRIAL:    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/40",
+  PAST_DUE: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/40",
+  CANCELED: "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/40",
+  EXPIRED:  "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/40 dark:text-gray-400 dark:border-gray-700/40",
 };
 
 const CHANGE_TYPE_ICON: Record<string, React.ReactNode> = {
-  UPGRADE: <TbArrowUpRight className="h-4 w-4 text-emerald-500" />,
-  DOWNGRADE: <TbArrowDownRight className="h-4 w-4 text-amber-500" />,
-  CANCEL: <TbBan className="h-4 w-4 text-red-500" />,
-  RENEWAL: <TbRefresh className="h-4 w-4 text-blue-500" />,
-  REACTIVATION: <TbPlayerPlay className="h-4 w-4 text-emerald-500" />,
-  TRIAL_START: <TbClock className="h-4 w-4 text-blue-500" />,
-  TRIAL_EXTEND: <TbClock className="h-4 w-4 text-blue-400" />,
+  UPGRADE:         <TbArrowUpRight className="h-4 w-4 text-green-600 dark:text-[#36E59A]" />,
+  DOWNGRADE:       <TbArrowDownRight className="h-4 w-4 text-amber-500" />,
+  CANCEL:          <TbBan className="h-4 w-4 text-red-500" />,
+  RENEWAL:         <TbRefresh className="h-4 w-4 text-blue-500" />,
+  REACTIVATION:    <TbPlayerPlay className="h-4 w-4 text-green-600 dark:text-[#36E59A]" />,
+  TRIAL_START:     <TbClock className="h-4 w-4 text-blue-500" />,
+  TRIAL_EXTEND:    <TbClock className="h-4 w-4 text-blue-400" />,
   MANUAL_OVERRIDE: <TbAlertTriangle className="h-4 w-4 text-amber-500" />,
 };
 
@@ -275,7 +275,7 @@ export function SubscriptionView({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="justify-start gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                    className="justify-start gap-2 text-green-700 border-green-200 hover:bg-green-50 dark:text-[#36E59A] dark:border-[#36E59A]/20 dark:hover:bg-[#36E59A]/10"
                     onClick={() => onReactivate(subscription)}
                   >
                     <TbPlayerPlay className="h-4 w-4" /> Reactivate

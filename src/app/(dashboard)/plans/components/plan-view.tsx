@@ -55,8 +55,8 @@ export function PlanView({
           <Badge
             className={
               plan.isActive
-                ? "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300"
-                : "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400"
+                ? "bg-green-50 text-green-700 border-green-200 dark:bg-[#36E59A]/10 dark:text-[#36E59A] dark:border-[#36E59A]/20"
+                : "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/40 dark:text-gray-400 dark:border-gray-700/40"
             }
           >
             {plan.isActive ? "Active" : "Archived"}
@@ -99,7 +99,7 @@ export function PlanView({
             variant="outline"
             size="sm"
             onClick={() => { onClose(); onArchive(plan); }}
-            className={plan.isActive ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}
+            className={plan.isActive ? "text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/20" : "text-muted-foreground border-border hover:bg-muted"}
           >
             <TbArchive className="mr-1.5 h-3.5 w-3.5" />
             {plan.isActive ? "Archive" : "Restore"}
@@ -128,7 +128,7 @@ export function PlanView({
           <div className="flex items-center gap-1.5">
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Yearly</p>
             {savingsPercent > 0 && (
-              <Badge className="text-[9px] px-1 py-0 bg-emerald-100 text-emerald-700 border-emerald-200">
+              <Badge className="text-[9px] px-1 py-0 bg-green-50 text-green-700 border-green-200 dark:bg-[#36E59A]/10 dark:text-[#36E59A] dark:border-[#36E59A]/20">
                 -{savingsPercent}%
               </Badge>
             )}
@@ -205,7 +205,7 @@ export function PlanView({
         <ul className="space-y-1.5">
           {plan.features.map((feature, i) => (
             <li key={i} className="flex items-start gap-2 text-sm">
-              <TbCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+              <TbCheck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <span>{feature}</span>
             </li>
           ))}

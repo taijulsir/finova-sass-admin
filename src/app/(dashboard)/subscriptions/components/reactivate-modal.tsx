@@ -173,7 +173,7 @@ export function ReactivateModal({ subscription, isOpen, onClose, onSuccess }: Re
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Reactivating..." : (
                 <><TbPlayerPlay className="h-4 w-4 mr-2" /> Reactivate</>
               )}

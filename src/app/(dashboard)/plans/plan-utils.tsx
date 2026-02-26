@@ -122,8 +122,8 @@ export const getPlanColumns = ({
         <Badge
           className={
             active
-              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200"
+              ? "bg-green-50 text-green-700 border-green-200 dark:bg-[#36E59A]/10 dark:text-[#36E59A] dark:border-[#36E59A]/20"
+              : "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/40 dark:text-gray-400 dark:border-gray-700/40"
           }
         >
           {active ? "Active" : "Archived"}

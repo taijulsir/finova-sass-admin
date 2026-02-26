@@ -180,10 +180,11 @@
 
   /* ── Sidebar active item indicator (dark) ───────────────────────────────── */
   .dark [data-active="true"][data-sidebar="menu-button"] {
-    background-color: rgba(85, 255, 170, 0.08) !important;
+    background-color: rgba(85, 255, 170, 0.06) !important;
     border-left: 2px solid #55FFAA;
     padding-left: calc(0.75rem - 2px);
     color: #E6E8EC;
+    font-weight: 500;
   }
 
   /* ── Sidebar hover (dark) ────────────────────────────────────────────────── */
@@ -208,5 +209,20 @@
   }
   .dark ::-webkit-scrollbar-thumb:hover {
     background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* ── Tab / filter active state (dark) ───────────────────────────────────── */
+  /* Active segment or toggle button — neutral surface, not accent-washed */
+  .dark [role="tab"][data-state="active"],
+  .dark [data-state="active"][role="tab"] {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #E6E8EC;
+  }
+
+  /* ── Primary button hover (dark) ────────────────────────────────────────── */
+  .dark [data-slot="button"][data-variant="default"]:hover,
+  .dark .btn-primary:hover {
+    background-color: #34E89E;
   }
 }

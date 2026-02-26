@@ -144,7 +144,7 @@ export function OrganizationView({
             </Button>
           )}
           {organization.status === "SUSPENDED" && (
-            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => { onClose(); onReactivate(organization); }}>
+            <Button variant="outline" size="sm" className="text-green-700 border-green-200 hover:bg-green-50 dark:text-[#36E59A] dark:border-[#36E59A]/20 dark:hover:bg-[#36E59A]/10" onClick={() => { onClose(); onReactivate(organization); }}>
               <TbPlayerPlay className="mr-1.5 h-3.5 w-3.5" /> Reactivate
             </Button>
           )}

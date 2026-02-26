@@ -132,18 +132,18 @@ export interface OrganizationColumnsProps {
 // ── Status Style Maps ──────────────────────────────────────────────────────
 
 export const subscriptionStatusStyles: Record<string, string> = {
-  TRIAL: "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200",
-  ACTIVE: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200",
-  PAST_DUE: "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200",
-  EXPIRED: "bg-red-100 text-red-800 hover:bg-red-200 border-red-200",
-  CANCELED: "bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200",
+  TRIAL:    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/40",
+  ACTIVE:   "bg-green-50 text-green-700 border-green-200 dark:bg-[#36E59A]/10 dark:text-[#36E59A] dark:border-[#36E59A]/20",
+  PAST_DUE: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/40",
+  EXPIRED:  "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/40",
+  CANCELED: "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/40 dark:text-gray-400 dark:border-gray-700/40",
 };
 
 export const orgStatusStyles: Record<string, string> = {
-  ACTIVE: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200",
-  SUSPENDED: "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200",
-  ARCHIVED: "bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200",
-  PENDING: "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200",
+  ACTIVE:    "bg-green-50 text-green-700 border-green-200 dark:bg-[#36E59A]/10 dark:text-[#36E59A] dark:border-[#36E59A]/20",
+  SUSPENDED: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/40",
+  ARCHIVED:  "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/40 dark:text-gray-400 dark:border-gray-700/40",
+  PENDING:   "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/40",
 };
 
 export const createdByStyles: Record<string, string> = {

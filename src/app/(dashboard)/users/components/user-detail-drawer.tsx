@@ -82,7 +82,7 @@ export function UserDetailDrawer({
               </SheetDescription>
               <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                 {isActive && (
-                  <Badge variant="outline" className="text-[10px] h-5 px-1.5 bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800">
+                  <Badge variant="outline" className="text-[10px] h-5 px-1.5 bg-green-50 text-green-700 border-green-200 dark:bg-[#36E59A]/10 dark:text-[#36E59A] dark:border-[#36E59A]/20">
                     Active
                   </Badge>
                 )}
