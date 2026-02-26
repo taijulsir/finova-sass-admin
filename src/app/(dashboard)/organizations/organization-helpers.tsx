@@ -73,12 +73,14 @@ export const useOrganizationHandlers = (refreshData: () => void) => {
 
   const handleArchiveOrganization = useCallback(
     async (org: Organization) => {
-      const action = org.isActive ? "archive" : "restore";
+      const isCurrentlyActive = org.isActive;
+      const action = isCurrentlyActive ? "archive" : "restore";
       try {
-        if (org.isActive) {
+        if (isCurrentlyActive) {
           await AdminService.archiveOrganization(org._id);
         } else {
-          await AdminService.changeOrgStatus(org._id, "active");
+          // Restore: change status back to ACTIVE
+          await AdminService.changeOrgStatus(org._id, "ACTIVE");
         }
         toast.success(`Organization ${action}d successfully`);
         refreshData();
@@ -89,48 +91,34 @@ export const useOrganizationHandlers = (refreshData: () => void) => {
     [refreshData]
   );
 
+  // ── Modal state ─────────────────────────────────────────────────────────
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCancelSubModalOpen, setIsCancelSubModalOpen] = useState(false);
+
+  const handleOpenDeleteModal = useCallback((org: Organization) => {
+    setSelectedOrganization(org);
+    setIsDeleteModalOpen(true);
+    setIsViewModalOpen(false);
+  }, []);
+
+  const handleOpenCancelSubModal = useCallback((org: Organization) => {
+    setSelectedOrganization(org);
+    setIsCancelSubModalOpen(true);
+    setIsViewModalOpen(false);
+  }, []);
+
   const handleDeleteOrganization = useCallback(
-    async (org: Organization) => {
-      // Warn if there's an active paid subscription
-      if (
-        org.subscription &&
-        org.subscription.status === "ACTIVE" &&
-        !org.subscription.isTrial
-      ) {
-        const proceed = confirm(
-          "⚠️ This organization has an active paid subscription. Deleting it may cause billing issues. Continue?"
-        );
-        if (!proceed) return;
-      }
-
-      if (!confirm("Are you sure you want to delete this organization permanently? This action cannot be undone.")) return;
-
+    async () => {
+      if (!selectedOrganization) return;
       try {
-        await AdminService.archiveOrganization(org._id);
+        await AdminService.archiveOrganization(selectedOrganization._id);
         toast.success("Organization deleted successfully");
         refreshData();
       } catch (error: any) {
         toast.error(error?.response?.data?.message || "Failed to delete organization");
       }
     },
-    [refreshData]
-  );
-
-  // ── Subscription actions ─────────────────────────────────────────────────
-  const handleCancelSubscription = useCallback(
-    async (org: Organization) => {
-      const reason = prompt("Reason for cancellation (required):");
-      if (!reason) return toast.error("A reason is required to cancel a subscription.");
-
-      try {
-        await AdminService.cancelSubscription(org._id, reason);
-        toast.success("Subscription cancelled successfully");
-        refreshData();
-      } catch (error: any) {
-        toast.error(error?.response?.data?.message || "Failed to cancel subscription");
-      }
-    },
-    [refreshData]
+    [selectedOrganization, refreshData]
   );
 
   return {
@@ -145,6 +133,10 @@ export const useOrganizationHandlers = (refreshData: () => void) => {
     setIsChangePlanModalOpen,
     isExtendTrialModalOpen,
     setIsExtendTrialModalOpen,
+    isDeleteModalOpen,
+    setIsDeleteModalOpen,
+    isCancelSubModalOpen,
+    setIsCancelSubModalOpen,
     selectedOrganization,
     // Modal openers
     handleOpenAddModal,
@@ -152,11 +144,12 @@ export const useOrganizationHandlers = (refreshData: () => void) => {
     handleViewOrganization,
     handleOpenChangePlanModal,
     handleOpenExtendTrialModal,
+    handleOpenDeleteModal,
+    handleOpenCancelSubModal,
     // Direct actions
     handleSuspendOrganization,
     handleReactivateOrganization,
     handleArchiveOrganization,
     handleDeleteOrganization,
-    handleCancelSubscription,
   };
 };

@@ -28,11 +28,11 @@ export const AdminService = {
     return data;
   },
   suspendOrganization: async (id: string, reason?: string) => {
-    const { data } = await api.patch(`/admin/organizations/${id}/status`, { status: 'suspended', reason });
+    const { data } = await api.patch(`/admin/organizations/${id}/status`, { status: 'SUSPENDED', reason });
     return data;
   },
   reactivateOrganization: async (id: string) => {
-    const { data } = await api.patch(`/admin/organizations/${id}/status`, { status: 'active' });
+    const { data } = await api.patch(`/admin/organizations/${id}/status`, { status: 'ACTIVE' });
     return data;
   },
 

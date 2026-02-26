@@ -31,7 +31,7 @@ export const createOrganizationSchema = z.object({
 export const editOrganizationSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
   logo: z.string().optional(),
-  status: z.enum(["active", "suspended", "archived"]).optional(),
+  status: z.enum(["ACTIVE", "SUSPENDED", "ARCHIVED"]).optional(),
 });
 
 export type CreateOrganizationFormValues = z.infer<typeof createOrganizationSchema>;
@@ -74,158 +74,172 @@ export function OrganizationForm({
     >
       {(form) => (
         <div className="space-y-6 py-4">
+          {/* ── Create Mode: 2-column layout ──────────────────────── */}
           {!isEdit && (
-            <div className="flex justify-center">
-              <Controller
-                control={form.control}
-                name="logo"
-                render={({ field }) => (
-                  <ImageUploader
-                    value={field.value}
-                    onChange={field.onChange}
-                    shape="square"
-                    folder="organizations"
-                    width={400}
-                    height={400}
-                    label="Organization Logo"
-                  />
-                )}
-              />
-            </div>
-          )}
-
-          {isEdit && (
-            <div className="flex justify-center">
-              <Controller
-                control={form.control}
-                name="logo"
-                render={({ field }) => (
-                  <ImageUploader
-                    value={field.value}
-                    onChange={field.onChange}
-                    shape="square"
-                    folder="organizations"
-                    width={400}
-                    height={400}
-                    label="Organization Logo"
-                  />
-                )}
-              />
-            </div>
-          )}
-
-          <div className="grid gap-4">
-            <ShortTextInput
-              control={form.control}
-              name="name"
-              label="Organization Name"
-              placeholder="Acme Corp"
-              disabled={isSubmitting}
-            />
-
-            {/* ── Create-only fields ───────────────────────────────── */}
-            {!isEdit && (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <ShortTextInput
+            <>
+              <div className="grid grid-cols-[200px_1fr] gap-6">
+                {/* Left: Logo uploader (larger) */}
+                <div className="flex items-start justify-center pt-2">
+                  <Controller
                     control={form.control}
-                    name="ownerName"
-                    label="Owner Full Name"
-                    placeholder="John Doe"
-                    disabled={isSubmitting}
-                  />
-                  <ShortTextInput
-                    control={form.control}
-                    name="ownerEmail"
-                    label="Owner Email *"
-                    placeholder="john@example.com"
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <SelectInput
-                    control={form.control}
-                    name="planId"
-                    label="Plan *"
-                    placeholder="Select a plan"
-                    options={planOptions}
-                    disabled={isSubmitting}
-                  />
-                  <SelectInput
-                    control={form.control}
-                    name="billingCycle"
-                    label="Billing Cycle"
-                    placeholder="Select cycle"
-                    options={[
-                      { label: "Monthly", value: "MONTHLY" },
-                      { label: "Yearly", value: "YEARLY" },
-                    ]}
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                {/* Trial toggle */}
-                <Controller
-                  control={form.control}
-                  name="isTrial"
-                  render={({ field }) => (
-                    <div className="flex items-center gap-3 rounded-lg border p-3">
-                      <Checkbox
-                        id="isTrial"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isSubmitting}
+                    name="logo"
+                    render={({ field }) => (
+                      <ImageUploader
+                        value={field.value}
+                        onChange={field.onChange}
+                        shape="square"
+                        folder="organizations"
+                        width={400}
+                        height={400}
+                        label="Logo"
+                        className="w-45 h-45"
                       />
-                      <div>
-                        <Label htmlFor="isTrial" className="text-sm font-medium cursor-pointer">
-                          Start as Trial
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          Organization will start on a trial period
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                />
+                    )}
+                  />
+                </div>
 
-                {form.watch("isTrial") && (
+                {/* Right: Core fields */}
+                <div className="grid gap-4">
                   <ShortTextInput
                     control={form.control}
-                    name="trialDays"
-                    label="Trial Duration (days)"
-                    placeholder="14"
-                    type="number"
+                    name="name"
+                    label="Organization Name *"
+                    placeholder="Acme Corp"
                     disabled={isSubmitting}
                   />
-                )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <ShortTextInput
+                      control={form.control}
+                      name="ownerName"
+                      label="Owner Full Name"
+                      placeholder="John Doe"
+                      disabled={isSubmitting}
+                    />
+                    <ShortTextInput
+                      control={form.control}
+                      name="ownerEmail"
+                      label="Owner Email *"
+                      placeholder="john@example.com"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+              </div>
 
-                <LongTextInput
+              {/* Plan & Billing row */}
+              <div className="grid grid-cols-2 gap-4">
+                <SelectInput
                   control={form.control}
-                  name="notes"
-                  label="Internal Notes (optional)"
-                  placeholder="e.g. VIP partner, marketing campaign lead..."
+                  name="planId"
+                  label="Plan *"
+                  placeholder="Select a plan"
+                  options={planOptions}
                   disabled={isSubmitting}
                 />
-              </>
-            )}
+                <SelectInput
+                  control={form.control}
+                  name="billingCycle"
+                  label="Billing Cycle"
+                  placeholder="Select cycle"
+                  options={[
+                    { label: "Monthly", value: "MONTHLY" },
+                    { label: "Yearly", value: "YEARLY" },
+                  ]}
+                  disabled={isSubmitting}
+                />
+              </div>
 
-            {/* ── Edit-only fields ────────────────────────────────── */}
-            {isEdit && (
+              {/* Trial toggle — full-box clickable */}
+              <Controller
+                control={form.control}
+                name="isTrial"
+                render={({ field }) => (
+                  <label
+                    htmlFor="isTrial"
+                    className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                  >
+                    <Checkbox
+                      id="isTrial"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isSubmitting}
+                    />
+                    <div>
+                      <span className="text-sm font-medium">
+                        Start as Trial
+                      </span>
+                      <p className="text-xs text-muted-foreground">
+                        Organization will start on a trial period
+                      </p>
+                    </div>
+                  </label>
+                )}
+              />
+
+              {form.watch("isTrial") && (
+                <ShortTextInput
+                  control={form.control}
+                  name="trialDays"
+                  label="Trial Duration (days)"
+                  placeholder="14"
+                  type="number"
+                  disabled={isSubmitting}
+                />
+              )}
+
+              <LongTextInput
+                control={form.control}
+                name="notes"
+                label="Internal Notes (optional)"
+                placeholder="e.g. VIP partner, marketing campaign lead..."
+                disabled={isSubmitting}
+              />
+            </>
+          )}
+
+          {/* ── Edit Mode ─────────────────────────────────────────── */}
+          {isEdit && (
+            <div className="grid gap-4">
+              <div className="flex justify-center">
+                <Controller
+                  control={form.control}
+                  name="logo"
+                  render={({ field }) => (
+                    <ImageUploader
+                      value={field.value}
+                      onChange={field.onChange}
+                      shape="square"
+                      folder="organizations"
+                      width={400}
+                      height={400}
+                      label="Organization Logo"
+                    />
+                  )}
+                />
+              </div>
+
+              <ShortTextInput
+                control={form.control}
+                name="name"
+                label="Organization Name"
+                placeholder="Acme Corp"
+                disabled={isSubmitting}
+              />
+
               <SelectInput
                 control={form.control}
                 name="status"
                 label="Status"
                 placeholder="Select status"
                 options={[
-                  { label: "Active", value: "active" },
-                  { label: "Suspended", value: "suspended" },
-                  { label: "Archived", value: "archived" },
+                  { label: "Active", value: "ACTIVE" },
+                  { label: "Suspended", value: "SUSPENDED" },
+                  { label: "Archived", value: "ARCHIVED" },
                 ]}
                 disabled={isSubmitting}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </FormContainer>

@@ -139,9 +139,10 @@ export const subscriptionStatusStyles: Record<string, string> = {
 };
 
 export const orgStatusStyles: Record<string, string> = {
-  active: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200",
-  suspended: "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200",
-  archived: "bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200",
+  ACTIVE: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200",
+  SUSPENDED: "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200",
+  ARCHIVED: "bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200",
+  PENDING: "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200",
 };
 
 export const createdByStyles: Record<string, string> = {
@@ -182,7 +183,7 @@ export function getOrgRisks(org: Organization): string[] {
     if (daysLeft <= 0) risks.push("Trial expired");
   }
 
-  if (org.status === "active" && (sub.status === "EXPIRED" || sub.status === "CANCELED")) {
+  if (org.status === "ACTIVE" && (sub.status === "EXPIRED" || sub.status === "CANCELED")) {
     risks.push("Org active but subscription inactive");
   }
 
@@ -202,7 +203,7 @@ function CopyableId({ value }: { value: string }) {
         toast.success("Copied to clipboard");
       }}
     >
-      <span className="truncate max-w-[120px]">{value}</span>
+      <span className="truncate max-w-30">{value}</span>
       <TbCopy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
     </button>
   );
@@ -222,7 +223,7 @@ function RiskIndicator({ org }: { org: Organization }) {
             <TbAlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
           </span>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[220px]">
+        <TooltipContent side="top" className="max-w-55">
           <ul className="text-xs space-y-0.5">
             {risks.map((r, i) => (
               <li key={i}>⚠ {r}</li>
@@ -404,14 +405,14 @@ export const getOrganizationColumns = ({
       }
 
       // Organization status actions
-      if (org.status === "active") {
+      if (org.status === "ACTIVE") {
         actions.push({
           label: "Suspend Organization",
           icon: TbBan,
           onClick: () => onSuspend(org),
         });
       }
-      if (org.status === "suspended") {
+      if (org.status === "SUSPENDED") {
         actions.push({
           label: "Reactivate Organization",
           icon: TbPlayerPlay,

@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,14 +19,6 @@ import { toast } from "sonner";
 import { Organization, Plan, subscriptionStatusStyles } from "../organization-utils";
 import { TbArrowRight } from "react-icons/tb";
 
-const changePlanSchema = z.object({
-  planId: z.string().min(1, "Select a plan"),
-  reason: z.string().min(3, "Reason is required (min 3 chars)").max(500),
-  confirmed: z.literal(true, "You must confirm the plan change"),
-});
-
-type ChangePlanFormValues = z.infer<typeof changePlanSchema>;
-
 interface ChangePlanModalProps {
   organization: Organization | null;
   plans: Plan[];
@@ -46,17 +35,13 @@ export function ChangePlanModal({
   onSuccess,
 }: ChangePlanModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const sub = organization?.subscription;
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [reason, setReason] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
 
+  const sub = organization?.subscription;
   const currentPlan = sub?.planId;
   const activePlans = plans.filter((p) => p.isActive);
-
-  const form = useForm<ChangePlanFormValues>({
-    resolver: zodResolver(changePlanSchema),
-    defaultValues: { planId: "", reason: "", confirmed: undefined as any },
-  });
-
-  const selectedPlanId = form.watch("planId");
   const selectedPlan = activePlans.find((p) => p._id === selectedPlanId);
 
   // Billing impact
@@ -65,13 +50,23 @@ export function ChangePlanModal({
       ? selectedPlan.price - currentPlan.price
       : null;
 
-  const handleSubmit = async (data: ChangePlanFormValues) => {
+  const resetForm = () => {
+    setSelectedPlanId("");
+    setReason("");
+    setConfirmed(false);
+  };
+
+  const handleSubmit = async () => {
     if (!organization) return;
+    if (!selectedPlanId) return toast.error("Select a plan");
+    if (reason.length < 3) return toast.error("Reason is required (min 3 characters)");
+    if (!confirmed) return toast.error("Please confirm the plan change");
+
     setIsSubmitting(true);
     try {
-      await AdminService.changeOrgPlan(organization._id, data.planId, data.reason);
+      await AdminService.changeOrgPlan(organization._id, selectedPlanId, reason);
       toast.success("Plan changed successfully");
-      form.reset();
+      resetForm();
       onClose();
       onSuccess();
     } catch (error: any) {
@@ -89,11 +84,11 @@ export function ChangePlanModal({
       description={`Modify the plan for ${organization.name}`}
       isOpen={isOpen}
       onClose={() => {
-        form.reset();
+        resetForm();
         onClose();
       }}
     >
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5 py-3">
+      <div className="space-y-5 py-3">
         {/* Current Plan */}
         <div className="rounded-lg border p-3 bg-muted/30">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
@@ -122,15 +117,15 @@ export function ChangePlanModal({
 
         {/* New Plan Selection */}
         <div className="space-y-2">
-          <Label>New Plan</Label>
+          <Label>New Plan *</Label>
           <Select
-            value={form.watch("planId")}
-            onValueChange={(val) => form.setValue("planId", val, { shouldValidate: true })}
+            value={selectedPlanId}
+            onValueChange={setSelectedPlanId}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a plan" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" sideOffset={4} className="z-200">
               {activePlans.map((p) => (
                 <SelectItem
                   key={p._id}
@@ -153,11 +148,6 @@ export function ChangePlanModal({
               ))}
             </SelectContent>
           </Select>
-          {form.formState.errors.planId && (
-            <p className="text-xs text-destructive">
-              {form.formState.errors.planId.message}
-            </p>
-          )}
         </div>
 
         {/* Billing Impact */}
@@ -193,46 +183,36 @@ export function ChangePlanModal({
         <div className="space-y-2">
           <Label>Reason for Change *</Label>
           <Textarea
-            {...form.register("reason")}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
             placeholder="e.g. Customer requested upgrade, promotional offer..."
             rows={3}
             disabled={isSubmitting}
           />
-          {form.formState.errors.reason && (
-            <p className="text-xs text-destructive">
-              {form.formState.errors.reason.message}
-            </p>
-          )}
         </div>
 
         {/* Confirmation */}
-        <div className="flex items-start gap-2 rounded-lg border p-3">
+        <label
+          htmlFor="confirm-change"
+          className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+        >
           <Checkbox
             id="confirm-change"
-            checked={form.watch("confirmed") === true}
-            onCheckedChange={(checked) =>
-              form.setValue("confirmed", checked === true ? true : (undefined as any), {
-                shouldValidate: true,
-              })
-            }
+            checked={confirmed}
+            onCheckedChange={(checked) => setConfirmed(checked === true)}
             disabled={isSubmitting}
             className="mt-0.5"
           />
           <div>
-            <Label htmlFor="confirm-change" className="text-sm cursor-pointer">
+            <span className="text-sm font-medium">
               I confirm this plan change
-            </Label>
+            </span>
             <p className="text-xs text-muted-foreground">
               This action will immediately change the subscription plan for this
               organization.
             </p>
           </div>
-        </div>
-        {form.formState.errors.confirmed && (
-          <p className="text-xs text-destructive">
-            {form.formState.errors.confirmed.message}
-          </p>
-        )}
+        </label>
 
         {/* Actions */}
         <div className="flex justify-end gap-2 pt-2">
@@ -240,18 +220,22 @@ export function ChangePlanModal({
             type="button"
             variant="outline"
             onClick={() => {
-              form.reset();
+              resetForm();
               onClose();
             }}
             disabled={isSubmitting}
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting || !form.watch("confirmed")}>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting || !confirmed || !selectedPlanId || reason.length < 3}
+          >
             {isSubmitting ? "Changing…" : "Confirm Change"}
           </Button>
         </div>
-      </form>
+      </div>
     </Modal>
   );
 }
