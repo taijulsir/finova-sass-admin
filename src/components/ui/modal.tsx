@@ -39,12 +39,12 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onChange}>
-      <DialogContent className={`${sizeClass[size]} max-h-[90vh] overflow-y-auto`}>
-        <DialogHeader>
+      <DialogContent className={`${sizeClass[size]} max-h-[90vh] flex flex-col overflow-hidden`}>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <div>{children}</div>
+        <div className="flex-1 min-h-0 flex flex-col">{children}</div>
       </DialogContent>
     </Dialog>
   );
