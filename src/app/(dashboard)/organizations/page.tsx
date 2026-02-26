@@ -299,32 +299,30 @@ export default function OrganizationsPage() {
       </div>
 
       {/* ── Create Modal ──────────────────────────────────────────── */}
-      {isAddModalOpen && (
-        <Modal
-          title="Add Organization"
-          description="Create a new organization with owner and subscription."
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          size="lg"
-        >
-          <OrganizationForm
-            isEdit={false}
-            isSubmitting={isSubmitting}
-            plans={plans}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setIsAddModalOpen(false)}
-          />
-        </Modal>
-      )}
+      <Modal
+        title="Add Organization"
+        description="Create a new organization with owner and subscription."
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        size="lg"
+      >
+        <OrganizationForm
+          isEdit={false}
+          isSubmitting={isSubmitting}
+          plans={plans}
+          onSubmit={handleFormSubmit}
+          onCancel={() => setIsAddModalOpen(false)}
+        />
+      </Modal>
 
       {/* ── Edit Modal ────────────────────────────────────────────── */}
-      {isEditModalOpen && selectedOrganization && (
-        <Modal
-          title="Edit Organization"
-          description="Update organization details."
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-        >
+      <Modal
+        title="Edit Organization"
+        description="Update organization details."
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+      >
+        {selectedOrganization && (
           <OrganizationForm
             isEdit
             isSubmitting={isSubmitting}
@@ -337,8 +335,8 @@ export default function OrganizationsPage() {
             onSubmit={handleFormSubmit}
             onCancel={() => setIsEditModalOpen(false)}
           />
-        </Modal>
-      )}
+        )}
+      </Modal>
 
       {/* ── Details View (Sheet / Drawer) ─────────────────────────── */}
       <OrganizationView

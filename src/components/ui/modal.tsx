@@ -44,7 +44,8 @@ export const Modal: React.FC<ModalProps> = ({
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <div className="flex-1 min-h-0 flex flex-col">{children}</div>
+        {/* flex-1 + min-h-0 lets children (FormContainer) own the scroll */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">{children}</div>
       </DialogContent>
     </Dialog>
   );

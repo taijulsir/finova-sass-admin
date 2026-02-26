@@ -47,7 +47,7 @@ export function UserModals({ actions, onRefresh }: UserModalsProps) {
         isOpen={actions.editModal}
         onClose={actions.closeEdit}
       >
-        {actions.editModal && actions.selectedUser && (
+        {actions.selectedUser && (
           <UserForm
             key={actions.selectedUser._id}
             isEdit={true}

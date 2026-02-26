@@ -77,9 +77,9 @@ export function OrganizationForm({
           {/* ── Create Mode: 2-column layout ──────────────────────── */}
           {!isEdit && (
             <>
-              <div className="grid grid-cols-[200px_1fr] gap-6">
-                {/* Left: Logo uploader (larger) */}
-                <div className="flex items-start justify-center pt-2">
+              <div className="grid grid-cols-[200px_1fr] gap-6 items-stretch">
+                {/* Left: Logo uploader — stretches to match right-column height */}
+                <div className="flex items-stretch">
                   <Controller
                     control={form.control}
                     name="logo"
@@ -92,7 +92,7 @@ export function OrganizationForm({
                         width={400}
                         height={400}
                         label="Logo"
-                        className="w-45 h-45"
+                        className="w-full h-full min-h-30"
                       />
                     )}
                   />

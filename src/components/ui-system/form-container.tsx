@@ -26,7 +26,7 @@ export function FormContainer<T extends FieldValues>({
   submitLabel = "Submit",
   cancelLabel = "Cancel",
   isSubmitting = false,
-  className = "space-y-4",
+  className = "",
 }: FormContainerProps<T>) {
   const form = useForm<T>({
     resolver: zodResolver(schema),
@@ -35,9 +35,25 @@ export function FormContainer<T extends FieldValues>({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={className}>
-        {children(form)}
-        <div className="flex justify-end space-x-2 pt-4">
+      {/*
+       * Outer form fills the flex column given to it by Modal.
+       * ┌─────────────────────────────┐
+       * │  scrollable body (flex-1)   │
+       * ├─────────────────────────────┤
+       * │  sticky footer (shrink-0)   │
+       * └─────────────────────────────┘
+       */}
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col min-h-0 flex-1"
+      >
+        {/* Scrollable content area */}
+        <div className={`flex-1 min-h-0 overflow-y-auto px-1 ${className}`}>
+          {children(form)}
+        </div>
+
+        {/* Pinned footer — always visible, never scrolled away */}
+        <div className="shrink-0 flex justify-end gap-2 pt-4 pb-1 border-t mt-4 bg-background">
           {onCancel && (
             <Button
               type="button"
