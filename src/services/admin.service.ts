@@ -163,6 +163,10 @@ export const AdminService = {
     const { data } = await api.delete(`/admin/organizations/${id}`);
     return data;
   },
+  deleteOrganization: async (id: string) => {
+    const { data } = await api.delete(`/admin/organizations/${id}/permanent`);
+    return data;
+  },
   archiveUser: async (userId: string) => {
     const { data } = await api.patch(`/admin/users/${userId}/archive`);
     return data;

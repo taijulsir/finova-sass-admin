@@ -111,8 +111,9 @@ export const useOrganizationHandlers = (refreshData: () => void) => {
     async () => {
       if (!selectedOrganization) return;
       try {
-        await AdminService.archiveOrganization(selectedOrganization._id);
+        await AdminService.deleteOrganization(selectedOrganization._id);
         toast.success("Organization deleted successfully");
+        setIsDeleteModalOpen(false);
         refreshData();
       } catch (error: any) {
         toast.error(error?.response?.data?.message || "Failed to delete organization");
