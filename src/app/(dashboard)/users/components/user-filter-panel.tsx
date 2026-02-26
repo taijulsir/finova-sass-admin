@@ -175,14 +175,17 @@ export function UserFilterPanel({ filterState }: UserFilterPanelProps) {
             <div>
               <SectionTitle>Last Login</SectionTitle>
               <Select
-                value={filters.lastLogin}
-                onValueChange={(v) => setFilter('lastLogin', v as UserFilters['lastLogin'])}
+                value={filters.lastLogin || '__all__'}
+                onValueChange={(v) =>
+                  setFilter('lastLogin', (v === '__all__' ? '' : v) as UserFilters['lastLogin'])
+                }
               >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="Any time" />
                 </SelectTrigger>
                 <SelectContent>
-                  {LAST_LOGIN_OPTIONS.map((opt) => (
+                  <SelectItem value="__all__" className="text-sm">Any time</SelectItem>
+                  {LAST_LOGIN_OPTIONS.filter((o) => o.value !== '').map((opt) => (
                     <SelectItem key={opt.value} value={opt.value} className="text-sm">
                       {opt.label}
                     </SelectItem>
