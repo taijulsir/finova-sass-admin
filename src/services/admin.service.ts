@@ -88,11 +88,41 @@ export const AdminService = {
     return data;
   },
 
-  // ── Subscriptions list (reuses org listing with subscription enrichment) ──
-  getSubscriptions: async (params: any = { page: 1, limit: 10, search: '', isActive: true }) => {
-    const { data } = await api.get('/admin/organizations', {
-      params,
-    });
+  // ── Subscriptions (direct, by subscription ID) ────────────────────────────
+  getSubscriptionKpis: async () => {
+    const { data } = await api.get('/admin/subscriptions/kpis');
+    return data;
+  },
+  getSubscriptions: async (params: any = { page: 1, limit: 10 }) => {
+    const { data } = await api.get('/admin/subscriptions', { params });
+    return data;
+  },
+  getAdminSubscription: async (subscriptionId: string) => {
+    const { data } = await api.get(`/admin/subscriptions/${subscriptionId}`);
+    return data;
+  },
+  getAdminSubscriptionHistory: async (subscriptionId: string) => {
+    const { data } = await api.get(`/admin/subscriptions/${subscriptionId}/history`);
+    return data;
+  },
+  adminChangePlan: async (subscriptionId: string, payload: { newPlanId: string; billingCycle?: string; reason: string }) => {
+    const { data } = await api.patch(`/admin/subscriptions/${subscriptionId}/change-plan`, payload);
+    return data;
+  },
+  adminExtendTrial: async (subscriptionId: string, payload: { additionalDays: number; reason?: string }) => {
+    const { data } = await api.patch(`/admin/subscriptions/${subscriptionId}/extend-trial`, payload);
+    return data;
+  },
+  adminCancelSubscription: async (subscriptionId: string, reason: string) => {
+    const { data } = await api.patch(`/admin/subscriptions/${subscriptionId}/cancel`, { reason });
+    return data;
+  },
+  adminReactivateSubscription: async (subscriptionId: string, payload: { planId: string; billingCycle?: string; reason?: string }) => {
+    const { data } = await api.patch(`/admin/subscriptions/${subscriptionId}/reactivate`, payload);
+    return data;
+  },
+  adminForceExpire: async (subscriptionId: string, reason: string) => {
+    const { data } = await api.patch(`/admin/subscriptions/${subscriptionId}/force-expire`, { reason });
     return data;
   },
 

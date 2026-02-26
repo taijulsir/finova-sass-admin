@@ -1,118 +1,312 @@
-import { Modal } from "@/components/ui/modal";
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TbEdit, TbArchive, TbCurrencyDollar } from "react-icons/tb";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AdminService } from "@/services/admin.service";
+import { SubscriptionRow, SubscriptionHistoryItem, SubscriptionStatus } from "@/types/subscription";
+import { cn } from "@/lib/utils";
+import {
+  TbEdit,
+  TbX,
+  TbPlayerPlay,
+  TbClock,
+  TbAlertTriangle,
+  TbArrowUpRight,
+  TbArrowDownRight,
+  TbRefresh,
+  TbBan,
+  TbHistory,
+  TbInfoCircle,
+} from "react-icons/tb";
 
-interface SubscriptionViewProps {
-  subscription: any;
+const STATUS_STYLES: Record<SubscriptionStatus, string> = {
+  ACTIVE: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  TRIAL: "bg-blue-100 text-blue-800 border-blue-200",
+  PAST_DUE: "bg-amber-100 text-amber-800 border-amber-200",
+  CANCELED: "bg-red-100 text-red-800 border-red-200",
+  EXPIRED: "bg-gray-100 text-gray-600 border-gray-200",
+};
+
+const CHANGE_TYPE_ICON: Record<string, React.ReactNode> = {
+  UPGRADE: <TbArrowUpRight className="h-4 w-4 text-emerald-500" />,
+  DOWNGRADE: <TbArrowDownRight className="h-4 w-4 text-amber-500" />,
+  CANCEL: <TbBan className="h-4 w-4 text-red-500" />,
+  RENEWAL: <TbRefresh className="h-4 w-4 text-blue-500" />,
+  REACTIVATION: <TbPlayerPlay className="h-4 w-4 text-emerald-500" />,
+  TRIAL_START: <TbClock className="h-4 w-4 text-blue-500" />,
+  TRIAL_EXTEND: <TbClock className="h-4 w-4 text-blue-400" />,
+  MANUAL_OVERRIDE: <TbAlertTriangle className="h-4 w-4 text-amber-500" />,
+};
+
+interface SubscriptionDrawerProps {
+  subscription: SubscriptionRow | null;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (sub: any) => void;
-  onArchive: (sub: any) => void;
+  onChangePlan: (sub: SubscriptionRow) => void;
+  onExtendTrial: (sub: SubscriptionRow) => void;
+  onCancel: (sub: SubscriptionRow) => void;
+  onReactivate: (sub: SubscriptionRow) => void;
+  onForceExpire: (sub: SubscriptionRow) => void;
 }
 
-const subscriptionStatusStyles: Record<string, string> = {
-  active: "bg-green-100 text-green-800",
-  trial: "bg-blue-100 text-blue-800",
-  past_due: "bg-amber-100 text-amber-800",
-  canceled: "bg-red-100 text-red-800",
-  expired: "bg-gray-100 text-gray-600",
-};
+function InfoRow({ label, value, mono = false }: { label: string; value?: React.ReactNode; mono?: boolean }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+      {mono ? (
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded break-all text-muted-foreground">{value ?? "—"}</code>
+      ) : (
+        <p className="text-sm text-foreground">{value ?? "—"}</p>
+      )}
+    </div>
+  );
+}
 
 export function SubscriptionView({
   subscription,
   isOpen,
   onClose,
-  onEdit,
-  onArchive,
-}: SubscriptionViewProps) {
+  onChangePlan,
+  onExtendTrial,
+  onCancel,
+  onReactivate,
+  onForceExpire,
+}: SubscriptionDrawerProps) {
+  const [history, setHistory] = useState<SubscriptionHistoryItem[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && subscription) {
+      setLoadingHistory(true);
+      AdminService.getAdminSubscriptionHistory(subscription._id)
+        .then((res) => setHistory(res.data?.history ?? []))
+        .catch(() => setHistory([]))
+        .finally(() => setLoadingHistory(false));
+    }
+  }, [isOpen, subscription]);
+
   if (!subscription) return null;
 
-  const sub = subscription.subscription;
+  const isActive = subscription.status === "ACTIVE" || subscription.status === "TRIAL";
+  const isCanceled = subscription.status === "CANCELED";
+  const isExpired = subscription.status === "EXPIRED";
 
   return (
-    <Modal
-      title="Subscription Details"
-      description="View detailed information about the organization's subscription plan."
-      isOpen={isOpen}
-      onClose={onClose}
-    >
-      <div className="space-y-6 pt-2">
-        <div className="flex items-center space-x-4 pb-4 border-b">
-          <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold">
-            <TbCurrencyDollar />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-foreground capitalize">
-              {sub?.planName || "No Plan"} {sub?.isTrial && <span className="text-sm font-normal text-blue-600">(Trial)</span>}
-            </h3>
-            <p className="text-sm text-muted-foreground">{subscription.name}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-y-4 gap-x-6">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Plan</p>
-            <Badge variant="outline" className="capitalize bg-muted/30">
-              {sub?.planName || "None"}
-            </Badge>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Status</p>
-            <Badge className={subscriptionStatusStyles[sub?.status] || "bg-gray-100 text-gray-600"}>
-              {sub?.isTrial ? "Trial" : sub?.status || "None"}
-            </Badge>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Billing Cycle</p>
-            <p className="text-base capitalize text-foreground">{sub?.billingCycle || "—"}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Billing Email</p>
-            <p className="text-base text-foreground underline decoration-muted">{subscription.ownerId?.email || 'N/A'}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Renewal Date</p>
-            <p className="text-base text-foreground">
-              {sub?.renewalDate ? new Date(sub.renewalDate).toLocaleDateString() : "—"}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Source</p>
-            <p className="text-base capitalize text-foreground">{sub?.createdBy || "—"}</p>
-          </div>
-          {sub?.isTrial && sub.trialEndDate && (
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Trial Ends</p>
-              <p className="text-base text-foreground">{new Date(sub.trialEndDate).toLocaleDateString()}</p>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col" side="right">
+        <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+          <div className="flex items-start gap-4">
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-xl font-bold shrink-0">
+              {subscription.org?.name?.charAt(0) ?? "?"}
             </div>
-          )}
-          <div className="space-y-1 col-span-2 pt-2">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Organization ID</p>
-            <code className="text-[11px] font-mono bg-muted p-1 px-1.5 rounded text-muted-foreground break-all">
-              {subscription.organizationId || subscription._id}
-            </code>
+            <div className="min-w-0 flex-1">
+              <SheetTitle className="text-lg font-bold truncate">{subscription.org?.name ?? "—"}</SheetTitle>
+              <SheetDescription className="text-xs font-mono text-muted-foreground">
+                {subscription.org?.organizationId ?? subscription.organizationId}
+              </SheetDescription>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge className={cn("border text-xs", STATUS_STYLES[subscription.status] ?? "bg-gray-100 text-gray-600")}>
+                  {subscription.isTrial ? "Trial" : subscription.status}
+                </Badge>
+                <Badge variant="outline" className="text-xs capitalize">{subscription.plan?.name ?? "—"}</Badge>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row justify-end gap-2 pt-6 border-t mt-4">
-          <Button 
-            variant="outline" 
-            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
-            onClick={() => onEdit(subscription)}
-          >
-            <TbEdit className="mr-2 h-4 w-4" /> Change Plan
-          </Button>
-          <Button 
-            variant="outline" 
-            className="text-amber-600 hover:text-amber-800 hover:bg-amber-50 border-amber-200"
-            onClick={() => onArchive(subscription)}
-          >
-            <TbArchive className="mr-2 h-4 w-4" /> 
-            {sub?.status === "canceled" ? "Reactivate" : "Cancel Subscription"}
-          </Button>
-        </div>
-      </div>
-    </Modal>
+        </SheetHeader>
+
+        <ScrollArea className="flex-1 overflow-auto">
+          <div className="px-6 py-5 space-y-8">
+            {/* ── Section 1: Overview ───────────────────────────────────── */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <TbInfoCircle className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Overview</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                <InfoRow label="Plan" value={
+                  <span className="flex items-center gap-1.5">
+                    <span className="font-semibold">{subscription.plan?.name ?? "—"}</span>
+                    {subscription.plan?.price !== undefined && (
+                      <span className="text-muted-foreground text-xs">
+                        ${subscription.billingCycle === "YEARLY" && subscription.plan.yearlyPrice != null
+                          ? subscription.plan.yearlyPrice
+                          : subscription.plan.price}
+                        /{subscription.billingCycle === "YEARLY" ? "yr" : "mo"}
+                      </span>
+                    )}
+                  </span>
+                } />
+                <InfoRow label="Billing Cycle" value={subscription.billingCycle?.toLowerCase()} />
+                <InfoRow label="Status" value={
+                  <Badge className={cn("border text-xs w-fit", STATUS_STYLES[subscription.status])}>
+                    {subscription.isTrial ? "Trial" : subscription.status}
+                  </Badge>
+                } />
+                <InfoRow label="Active" value={subscription.isActive ? "Yes" : "No"} />
+                <InfoRow label="Renewal Date" value={subscription.renewalDate ? new Date(subscription.renewalDate).toLocaleDateString() : "—"} />
+                {subscription.isTrial && subscription.trialEndDate && (
+                  <InfoRow label="Trial Ends" value={new Date(subscription.trialEndDate).toLocaleDateString()} />
+                )}
+                <InfoRow label="Start Date" value={subscription.startDate ? new Date(subscription.startDate).toLocaleDateString() : "—"} />
+                <InfoRow label="Created At" value={subscription.createdAt ? new Date(subscription.createdAt).toLocaleDateString() : "—"} />
+                <InfoRow label="Created By" value={<span className="capitalize">{subscription.createdBy?.toLowerCase() ?? "—"}</span>} />
+                <InfoRow label="Payment Provider" value={<span className="capitalize">{subscription.paymentProvider?.toLowerCase() ?? "—"}</span>} />
+                {subscription.cancelledAt && (
+                  <InfoRow label="Cancelled At" value={new Date(subscription.cancelledAt).toLocaleDateString()} />
+                )}
+                {subscription.cancelReason && (
+                  <div className="col-span-2">
+                    <InfoRow label="Cancel Reason" value={subscription.cancelReason} />
+                  </div>
+                )}
+                {subscription.paymentReferenceId && (
+                  <div className="col-span-2">
+                    <InfoRow label="Payment Reference" value={subscription.paymentReferenceId} mono />
+                  </div>
+                )}
+                <div className="col-span-2">
+                  <InfoRow label="Subscription ID" value={subscription._id} mono />
+                </div>
+              </div>
+            </section>
+
+            <Separator />
+
+            {/* ── Section 2: Plan History ───────────────────────────────── */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <TbHistory className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Plan History</h3>
+              </div>
+
+              {loadingHistory ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton className="h-3 w-36" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : history.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No history available.</p>
+              ) : (
+                <div className="relative space-y-0">
+                  {/* Timeline line */}
+                  <div className="absolute left-3.5 top-4 bottom-4 w-px bg-border" />
+                  {history.map((item, idx) => (
+                    <div key={item._id ?? idx} className="relative flex gap-4 pb-4 last:pb-0">
+                      <div className="h-7 w-7 rounded-full bg-background border-2 border-border flex items-center justify-center shrink-0 z-10">
+                        {CHANGE_TYPE_ICON[item.changeType] ?? <TbHistory className="h-3 w-3 text-muted-foreground" />}
+                      </div>
+                      <div className="flex-1 pt-0.5 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="text-xs font-semibold capitalize">{item.changeType?.replace(/_/g, " ")}</span>
+                            {item.previousPlanId && item.newPlanId && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                · {item.previousPlanId.name} → {item.newPlanId.name}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                            {new Date(item.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {item.changedBy && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            by {item.changedBy.name ?? item.changedBy.email}
+                          </p>
+                        )}
+                        {item.reason && (
+                          <p className="text-xs text-muted-foreground mt-0.5 italic">&ldquo;{item.reason}&rdquo;</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <Separator />
+
+            {/* ── Section 3: Admin Actions ──────────────────────────────── */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <TbAlertTriangle className="h-4 w-4 text-amber-500" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Admin Actions</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="justify-start gap-2 text-blue-600 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  onClick={() => onChangePlan(subscription)}
+                >
+                  <TbEdit className="h-4 w-4" /> Change Plan
+                </Button>
+
+                {subscription.isTrial && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start gap-2 text-blue-600 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                    onClick={() => onExtendTrial(subscription)}
+                  >
+                    <TbClock className="h-4 w-4" /> Extend Trial
+                  </Button>
+                )}
+
+                {(isCanceled || isExpired) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                    onClick={() => onReactivate(subscription)}
+                  >
+                    <TbPlayerPlay className="h-4 w-4" /> Reactivate
+                  </Button>
+                )}
+
+                {isActive && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="justify-start gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                      onClick={() => onCancel(subscription)}
+                    >
+                      <TbX className="h-4 w-4" /> Cancel
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="justify-start gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                      onClick={() => onForceExpire(subscription)}
+                    >
+                      <TbAlertTriangle className="h-4 w-4" /> Force Expire
+                    </Button>
+                  </>
+                )}
+              </div>
+            </section>
+          </div>
+        </ScrollArea>
+      </SheetContent>
+    </Sheet>
   );
 }
