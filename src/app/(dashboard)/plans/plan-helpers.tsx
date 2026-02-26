@@ -18,6 +18,7 @@ export function usePlanHandlers(refresh: () => void) {
 
   const handleEditPlan = useCallback((plan: Plan) => {
     setSelectedPlan(plan);
+    setIsViewModalOpen(false);
     setIsEditModalOpen(true);
   }, []);
 

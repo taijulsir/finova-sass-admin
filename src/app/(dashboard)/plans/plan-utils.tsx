@@ -33,6 +33,7 @@ export interface Column<T> {
   accessorKey: keyof T | string;
   cell?: (item: T) => React.ReactNode;
   className?: string;
+  isAction?: boolean;
 }
 
 export interface PlanColumnsProps {
@@ -89,7 +90,7 @@ export const getPlanColumns = ({
     accessorKey: "features",
     header: "Features",
     cell: (plan) => (
-      <div className="flex flex-wrap gap-1 max-w-[200px]">
+      <div className="flex flex-wrap gap-1 max-w-50">
         {plan.features.slice(0, 3).map((f, i) => (
           <Badge key={i} variant="outline" className="text-[10px] bg-muted/30">
             {f}
@@ -140,6 +141,7 @@ export const getPlanColumns = ({
   {
     accessorKey: "actions",
     header: "Actions",
+    isAction: true,
     cell: (plan) => {
       const actions = [
         {
