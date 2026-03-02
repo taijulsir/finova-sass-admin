@@ -1,21 +1,49 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ToggleLeft, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import api from "@/lib/api";
 
-const EXAMPLE_FLAGS = [
-  { key: "ai_assistant",        label: "AI Assistant",           desc: "Enable AI-powered assistant for organizations",         enabled: true,  orgs: 12 },
-  { key: "advanced_analytics",  label: "Advanced Analytics",     desc: "Unlock advanced analytics dashboard",                   enabled: false, orgs: 0 },
-  { key: "custom_branding",     label: "Custom Branding",        desc: "Allow organizations to customize branding",             enabled: true,  orgs: 45 },
-  { key: "api_access",          label: "API Access",             desc: "Enable REST API access for integrations",               enabled: false, orgs: 3 },
-  { key: "multi_workspace",     label: "Multi-Workspace",        desc: "Allow multiple workspaces per organization",            enabled: false, orgs: 0 },
-];
+type Flag = {
+  id: string;
+  key: string;
+  label: string;
+  description?: string;
+  enabled: boolean;
+  global: boolean;
+};
 
 export default function FeatureFlagsPage() {
+  const [flags, setFlags] = useState<Flag[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    api
+      .get("/feature-flags")
+      .then((res) => {
+        if (!mounted) return;
+        setFlags(res.data?.data ?? []);
+      })
+      .catch((err) => {
+        console.error(err);
+        if (!mounted) return;
+        setError(err?.message ?? "Failed to load feature flags");
+      })
+      .finally(() => mounted && setLoading(false));
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
@@ -46,34 +74,44 @@ export default function FeatureFlagsPage() {
 
       {/* Flags list */}
       <div className="flex-1 overflow-auto px-6 pb-6">
-        <div className="space-y-2">
-          {EXAMPLE_FLAGS.map((flag) => (
-            <Card key={flag.key}>
-              <CardContent className="p-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">{flag.label}</p>
-                    <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-mono">
-                      {flag.key}
-                    </code>
+        {loading ? (
+          <div className="flex items-center justify-center h-full">Loading...</div>
+        ) : error ? (
+          <div className="text-center text-sm text-destructive">{error}</div>
+        ) : flags && flags.length > 0 ? (
+          <div className="space-y-2">
+            {flags.map((flag) => (
+              <Card key={flag.id}>
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">{flag.label}</p>
+                      <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-mono">
+                        {flag.key}
+                      </code>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{flag.description}</p>
+                    {flag.global ? (
+                      <p className="text-[10px] text-muted-foreground mt-1">Global</p>
+                    ) : null}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{flag.desc}</p>
-                  {flag.orgs > 0 && (
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      Active for <span className="font-medium text-foreground">{flag.orgs}</span> organizations
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <Badge variant="outline" className="text-[10px]">
-                    {flag.enabled ? "Global" : "Per-org"}
-                  </Badge>
-                  <Switch checked={flag.enabled} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Badge variant="outline" className="text-[10px]">
+                      {flag.global ? "Global" : "Per-org"}
+                    </Badge>
+                    <Switch checked={flag.enabled} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <ToggleLeft className="h-8 w-8 text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No feature flags yet</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Create flags to roll out features gradually.</p>
+          </div>
+        )}
       </div>
     </div>
   );
