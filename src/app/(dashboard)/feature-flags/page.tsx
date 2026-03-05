@@ -1,118 +1,157 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ToggleLeft, Plus, Search } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { AdminService } from "@/services/admin.service";
+import { Plus, ToggleLeft, Search, Filter, AlertCircle, Globe, Building2, ShieldCheck, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import api from "@/lib/api";
-
-type Flag = {
-  id: string;
-  key: string;
-  label: string;
-  description?: string;
-  enabled: boolean;
-  global: boolean;
-};
+import { useFetchData } from "@/hooks/use-fetch-data";
+import { Pagination } from "@/components/ui-system/pagination";
+import { DataTable } from "@/components/ui-system/table/DataTable";
+import { PageHeader } from "@/components/ui-system/page-header";
+import { FilterSection } from "@/components/ui-system/filter-section";
+import { getFeatureFlagColumns, FeatureFlag } from "./flag-utils";
+import { toast } from "sonner";
 
 export default function FeatureFlagsPage() {
-  const [flags, setFlags] = useState<Flag[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [activeTab, setActiveTab] = useState("all");
 
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    api
-      .get("/feature-flags")
-      .then((res) => {
-        if (!mounted) return;
-        setFlags(res.data?.data ?? []);
-      })
-      .catch((err) => {
-        console.error(err);
-        if (!mounted) return;
-        setError(err?.message ?? "Failed to load feature flags");
-      })
-      .finally(() => mounted && setLoading(false));
+  const fetchParams = useMemo(
+    () => ({
+      page,
+      limit,
+      search,
+    }),
+    [page, limit, search]
+  );
 
-    return () => {
-      mounted = false;
-    };
+  const {
+    data: flags,
+    loading,
+    totalItems,
+    totalPages,
+    refresh,
+  } = useFetchData<FeatureFlag>(AdminService.getFeatureFlags, fetchParams, []);
+
+  const handleEdit = useCallback((flag: FeatureFlag) => {
+    toast.info(`Edit: ${flag.name}`);
   }, []);
 
+  const handleDelete = useCallback(async (flag: FeatureFlag) => {
+    if (!confirm(`Are you sure you want to delete ${flag.name}?`)) return;
+    try {
+      await AdminService.deleteFeatureFlag(flag._id);
+      toast.success("Feature flag deleted");
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to delete flag");
+    }
+  }, [refresh]);
+
+  const handleToggleGlobal = useCallback(async (flag: FeatureFlag) => {
+    try {
+      await AdminService.toggleGlobalFlag(flag._id, !flag.enabledGlobal);
+      toast.success(`Global access ${!flag.enabledGlobal ? "enabled" : "disabled"}`);
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to toggle global status");
+    }
+  }, [refresh]);
+
+  const handleManageOrgs = useCallback((flag: FeatureFlag) => {
+    toast.info(`Manage organizations for: ${flag.name}`);
+  }, []);
+
+  const columns = useMemo(() => getFeatureFlagColumns({
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+    onToggleGlobal: handleToggleGlobal,
+    onManageOrgs: handleManageOrgs,
+  }), [handleEdit, handleDelete, handleToggleGlobal, handleManageOrgs]);
+
+  const stats = [
+    { label: "Active Flags", value: flags.length, icon: ToggleLeft, bg: "bg-indigo-50", color: "text-indigo-600" },
+    { label: "Global", value: flags.filter(f => f.enabledGlobal).length, icon: Globe, bg: "bg-emerald-50", color: "text-emerald-600" },
+    { label: "Per-Org", value: flags.filter(f => f.perOrganizationEnabled).length, icon: Building2, bg: "bg-amber-50", color: "text-amber-600" },
+    { label: "Total Orgs", value: "All Active", icon: ShieldCheck, bg: "bg-purple-50", color: "text-purple-600" },
+  ];
+
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="px-6 pt-5 pb-3 shrink-0">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight leading-none flex items-center gap-2">
-              <ToggleLeft className="h-5 w-5 text-primary" />
-              Feature Flags
-            </h1>
-            <p className="text-xs text-muted-foreground mt-1">
-              Enable or disable features per organization or globally.
-            </p>
-          </div>
-          <Button size="sm" className="gap-1.5">
-            <Plus className="h-3.5 w-3.5" /> New Flag
-          </Button>
-        </div>
-      </div>
+    <div className="h-full flex flex-col space-y-4 overflow-hidden bg-slate-50/30">
+        <div className="px-6 pt-6 shrink-0">
+            <PageHeader
+                title="Feature Flags"
+                description="Manage global and organization-specific feature toggles for precise control."
+                action={{
+                    label: "Create Flag",
+                    icon: Plus,
+                    onClick: () => toast.info("Create Flag Modal"),
+                }}
+            />
 
-      {/* Search */}
-      <div className="px-6 pb-3 shrink-0">
-        <div className="relative max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Search flags..." className="pl-8 h-8 text-sm" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                {stats.map((stat, i) => (
+                    <Card key={i} className="border-slate-200/60 shadow-sm h-20 transition-all hover:shadow-md">
+                        <CardContent className="p-4 flex items-center justify-between h-full">
+                            <div className="space-y-0.5">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{stat.label}</p>
+                                <p className="text-xl font-bold text-slate-900 tracking-tight leading-none pt-1">{stat.value}</p>
+                            </div>
+                            <div className={`h-9 w-9 rounded-xl ${stat.bg} flex items-center justify-center`}>
+                                <stat.icon className={`h-4.5 w-4.5 ${stat.color}`} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
         </div>
-      </div>
 
-      {/* Flags list */}
-      <div className="flex-1 overflow-auto px-6 pb-6">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">Loading...</div>
-        ) : error ? (
-          <div className="text-center text-sm text-destructive">{error}</div>
-        ) : flags && flags.length > 0 ? (
-          <div className="space-y-2">
-            {flags.map((flag) => (
-              <Card key={flag.id}>
-                <CardContent className="p-4 flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium">{flag.label}</p>
-                      <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-mono">
-                        {flag.key}
-                      </code>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{flag.description}</p>
-                    {flag.global ? (
-                      <p className="text-[10px] text-muted-foreground mt-1">Global</p>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <Badge variant="outline" className="text-[10px]">
-                      {flag.global ? "Global" : "Per-org"}
-                    </Badge>
-                    <Switch checked={flag.enabled} />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <ToggleLeft className="h-8 w-8 text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No feature flags yet</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">Create flags to roll out features gradually.</p>
-          </div>
-        )}
-      </div>
+        <div className="px-6 shrink-0 mt-2">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-2 rounded-xl border border-slate-200/60 shadow-sm">
+                <div className="flex items-center gap-2 pl-2">
+                    <Activity className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-semibold text-slate-600">All Toggles</span>
+                </div>
+                <div className="relative w-full sm:w-75">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                        placeholder="Search flags by key or name..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-9 bg-slate-50/50 border-slate-200/60 focus-visible:ring-emerald-500 focus:border-emerald-500 h-9"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <div className="flex-1 overflow-hidden px-6 pb-4">
+            <Card className="h-full border-slate-200/60 shadow-sm flex flex-col overflow-hidden">
+                <DataTable
+                    columns={columns as any}
+                    data={flags}
+                    loading={loading}
+                    onRowClick={() => {}}
+                />
+                
+                <div className="px-5 py-3 border-t bg-slate-50/30 shrink-0">
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        limit={limit}
+                        onPageChange={setPage}
+                        onLimitChange={(newLimit) => {
+                            setLimit(newLimit);
+                            setPage(1);
+                        }}
+                    />
+                </div>
+            </Card>
+        </div>
     </div>
   );
 }

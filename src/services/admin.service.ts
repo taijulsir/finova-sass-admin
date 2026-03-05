@@ -322,4 +322,30 @@ export const AdminService = {
     const { data } = await api.delete(`/platform-rbac/users/${userId}/roles/${roleId}`);
     return data;
   },
+
+  // --- Feature Flags ---
+  getFeatureFlags: async (params: any) => {
+    const { data } = await api.get('/feature-flags', { params });
+    return data;
+  },
+  createFeatureFlag: async (data: any) => {
+    const res = await api.post('/feature-flags', data);
+    return res.data;
+  },
+  updateFeatureFlag: async (id: string, data: any) => {
+    const res = await api.patch(`/feature-flags/${id}`, data);
+    return res.data;
+  },
+  toggleGlobalFlag: async (id: string, enabledGlobal: boolean) => {
+    const res = await api.patch(`/feature-flags/${id}/global`, { enabledGlobal });
+    return res.data;
+  },
+  toggleOrgFlag: async (id: string, organizationId: string, enabled: boolean) => {
+    const res = await api.patch(`/feature-flags/${id}/organization`, { organizationId, enabled });
+    return res.data;
+  },
+  deleteFeatureFlag: async (id: string) => {
+    const res = await api.delete(`/feature-flags/${id}`);
+    return res.data;
+  },
 }
