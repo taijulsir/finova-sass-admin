@@ -233,43 +233,47 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-10">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            SaaS growth, revenue, and retention intelligence
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={preset} onValueChange={(v) => setPreset(v as DateRangePreset)}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="Select range" />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(presetLabels) as DateRangePreset[])
-                .filter((k) => k !== 'custom')
-                .map((k) => (
-                  <SelectItem key={k} value={k}>
-                    {presetLabels[k]}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setRefreshKey((k) => k + 1)}
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </div>
+    <div className="h-full flex flex-col overflow-hidden bg-slate-50/30">
+      <div className="flex-1 overflow-y-auto px-6 py-6 pb-10 custom-scrollbar">
+        <div className="max-w-[1600px] mx-auto space-y-6">
+          {/* Header */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">
+                SaaS growth, revenue, and retention intelligence
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={preset} onValueChange={(v) => setPreset(v as DateRangePreset)}>
+                <SelectTrigger className="w-44 bg-white">
+                  <SelectValue placeholder="Select range" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(presetLabels) as DateRangePreset[])
+                    .filter((k) => k !== 'custom')
+                    .map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {presetLabels[k]}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setRefreshKey((k) => k + 1)}
+                disabled={loading}
+                className="bg-white"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </div>
 
-      {/* ── KPI Cards ── */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6">
+            {/* ── KPI Cards ── */}
+            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Monthly Recurring Revenue"
           value={loading ? '—' : formatMoney(overview?.mrr ?? 0)}
@@ -724,7 +728,10 @@ export default function AnalyticsPage() {
             </ResponsiveContainer>
           )}
         </CardContent>
-        </Card>
+      </Card>
+    </div>
+    </div>
+    </div>
     </div>
   );
 }

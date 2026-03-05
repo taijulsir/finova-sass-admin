@@ -348,4 +348,34 @@ export const AdminService = {
     const res = await api.delete(`/feature-flags/${id}`);
     return res.data;
   },
+
+  // --- Support Tickets ---
+  getSupportTickets: async (params: any) => {
+    const { data } = await api.get('/support/admin/support-tickets', { params });
+    return data;
+  },
+  getSupportTicketDetails: async (id: string) => {
+    const { data } = await api.get(`/support/admin/support-tickets/${id}`);
+    return data;
+  },
+  getSupportTicketMessages: async (id: string) => {
+    const { data } = await api.get(`/support/admin/support-tickets/${id}/messages`);
+    return data;
+  },
+  replyToSupportTicket: async (id: string, message: string, attachments?: string[]) => {
+    const { data } = await api.post(`/support/admin/support-tickets/${id}/message`, { message, attachments });
+    return data;
+  },
+  updateSupportTicketStatus: async (id: string, status: string) => {
+    const { data } = await api.patch(`/support/admin/support-tickets/${id}/status`, { status });
+    return data;
+  },
+  assignSupportTicket: async (id: string, adminId: string) => {
+    const { data } = await api.patch(`/support/admin/support-tickets/${id}/assign`, { adminId });
+    return data;
+  },
+  deleteSupportTicket: async (id: string) => {
+    const { data } = await api.delete(`/support/admin/support-tickets/${id}`);
+    return data;
+  },
 }

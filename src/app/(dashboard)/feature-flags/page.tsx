@@ -28,6 +28,7 @@ export default function FeatureFlagsPage() {
   const [limit, setLimit] = useState(10);
   const [activeTab, setActiveTab] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingFlag, setEditingFlag] = useState<FeatureFlag | null>(null);
 
   const fetchParams = useMemo(
     () => ({
@@ -47,7 +48,8 @@ export default function FeatureFlagsPage() {
   } = useFetchData<FeatureFlag>(AdminService.getFeatureFlags, fetchParams, []);
 
   const handleEdit = useCallback((flag: FeatureFlag) => {
-    toast.info(`Edit: ${flag.name}`);
+    setEditingFlag(flag);
+    setIsModalOpen(true);
   }, []);
 
   const handleDelete = useCallback(async (flag: FeatureFlag) => {
@@ -163,21 +165,33 @@ export default function FeatureFlagsPage() {
             </Card>
         </div>
 
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={(open) => {
+            setIsModalOpen(open);
+            if (!open) setEditingFlag(null); // Reset when closing
+        }}>
             <DialogContent className="sm:max-w-[425px]">
-                <DialogTitle className="sr-only">Create New Flag</DialogTitle>
+                <DialogTitle className="sr-only">
+                    {editingFlag ? "Edit Feature Flag" : "Create New Flag"}
+                </DialogTitle>
                 <DialogHeader>
-                    <DialogTitle>Create New Flag</DialogTitle>
+                    <DialogTitle>{editingFlag ? "Edit Feature Flag" : "Create New Flag"}</DialogTitle>
                     <DialogDescription>
-                        Define a new feature flag to control system capabilities globally or per organization.
+                        {editingFlag 
+                            ? "Update the configuration for this feature flag." 
+                            : "Define a new feature flag to control system capabilities globally or per organization."}
                     </DialogDescription>
                 </DialogHeader>
                 <CreateFlagForm 
+                    initialData={editingFlag}
                     onSuccess={() => {
                         setIsModalOpen(false);
+                        setEditingFlag(null);
                         refresh();
                     }}
-                    onCancel={() => setIsModalOpen(false)}
+                    onCancel={() => {
+                        setIsModalOpen(false);
+                        setEditingFlag(null);
+                    }}
                 />
             </DialogContent>
         </Dialog>

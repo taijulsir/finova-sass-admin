@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { AdminService } from "@/services/admin.service";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const formSchema = z.object({
   name: z.string().min(3).max(50),
@@ -28,9 +28,10 @@ const formSchema = z.object({
 interface CreateFlagFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+  initialData?: any; // Add initialData prop
 }
 
-export function CreateFlagForm({ onSuccess, onCancel }: CreateFlagFormProps) {
+export function CreateFlagForm({ onSuccess, onCancel, initialData }: CreateFlagFormProps) {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<any>({
@@ -43,14 +44,31 @@ export function CreateFlagForm({ onSuccess, onCancel }: CreateFlagFormProps) {
     },
   });
 
+  // Handle initialData for editing
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        name: initialData.name || "",
+        description: initialData.description || "",
+        enabledGlobal: initialData.enabledGlobal || false,
+        perOrganizationEnabled: initialData.perOrganizationEnabled || false,
+      });
+    }
+  }, [initialData, form]);
+
   async function onSubmit(values: any) {
     setLoading(true);
     try {
-      await AdminService.createFeatureFlag(values);
-      toast.success("Feature flag created successfully");
+        if (initialData) {
+            await AdminService.updateFeatureFlag(initialData._id, values);
+            toast.success("Feature flag updated successfully");
+        } else {
+            await AdminService.createFeatureFlag(values);
+            toast.success("Feature flag created successfully");
+        }
       onSuccess();
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to create feature flag");
+      toast.error(error?.response?.data?.message || `Failed to ${initialData ? 'update' : 'create'} feature flag`);
     } finally {
       setLoading(false);
     }
@@ -128,7 +146,7 @@ export function CreateFlagForm({ onSuccess, onCancel }: CreateFlagFormProps) {
             Cancel
           </Button>
           <Button type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Create Flag"}
+            {loading ? "Saving..." : initialData ? "Update Flag" : "Create Flag"}
           </Button>
         </div>
       </form>
