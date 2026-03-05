@@ -6,10 +6,8 @@ import {
   Plus, 
   Search, 
   Activity, 
-  Filter, 
   RefreshCw,
   CheckCircle,
-  XCircle,
   Clock,
   AlertCircle
 } from "lucide-react";
@@ -91,107 +89,104 @@ export default function SupportTicketsPage() {
   }), [handleView, handleAssign, handleStatusChange]);
 
   const stats = [
-    { label: "Open", value: tickets.filter(t => t.status === 'open').length, icon: AlertCircle, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { label: "In Progress", value: tickets.filter(t => t.status === 'in_progress').length, icon: Clock, color: "text-blue-500", bg: "bg-blue-50" },
-    { label: "Resolved", value: tickets.filter(t => t.status === 'resolved').length, icon: CheckCircle, color: "text-purple-500", bg: "bg-purple-50" },
-    { label: "Avg Response", value: "2.4h", icon: Activity, color: "text-amber-500", bg: "bg-amber-50" },
+    { label: "Open Tickets", value: tickets.filter(t => t.status === 'open').length, icon: AlertCircle, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "High Priority", value: tickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length, icon: Activity, color: "text-red-600", bg: "bg-red-50" },
+    { label: "In Progress", value: tickets.filter(t => t.status === 'in_progress').length, icon: Clock, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Resolved Tonight", value: tickets.filter(t => t.status === 'resolved').length, icon: CheckCircle, color: "text-purple-600", bg: "bg-purple-50" },
   ];
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-slate-50/30">
+    <div className="h-full flex flex-col overflow-hidden bg-white/50">
       {/* Header Section */}
-      <div className="px-6 pt-6 pb-2 shrink-0">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-              <LifeBuoy className="h-6 w-6 text-indigo-600" />
-              Support Tickets
-            </h1>
-            <p className="text-xs text-slate-500 mt-1 font-medium">
-              Manage organization support requests and technical escalations.
-            </p>
+      <div className="px-6 py-4 border-b bg-white shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-green-600/10 flex items-center justify-center">
+              <LifeBuoy className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none">
+                Support Tickets
+              </h1>
+              <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                Manage organization support requests and technical escalations.
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-             <Button variant="outline" size="sm" onClick={() => setRefreshKey(k => k + 1)} disabled={loading} className="bg-white">
-                <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+             <Button variant="outline" size="sm" onClick={() => setRefreshKey(k => k + 1)} disabled={loading} className="h-8 text-xs">
+                <RefreshCw className={`h-3 w-3 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
              </Button>
-             <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm">
-                <Plus className="h-4 w-4 mr-1.5" />
+             <Button size="sm" className="h-8 text-xs bg-green-600 hover:bg-green-700 shadow-sm transition-all active:scale-95">
+                <Plus className="h-3.5 w-3.5 mr-1" />
                 New Ticket
              </Button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        {/* Compact Stats Row */}
+        <div className="grid grid-cols-4 gap-4 mt-4">
           {stats.map((stat, i) => (
-            <Card key={i} className="border-slate-200/60 shadow-sm h-18 overflow-hidden transition-all hover:shadow-md">
-                <CardContent className="p-4 flex items-center justify-between h-full">
-                    <div className="space-y-0.5">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
-                        <p className="text-xl font-bold text-slate-900 tracking-tight leading-none">{stat.value}</p>
-                    </div>
-                    <div className={`h-9 w-9 rounded-xl ${stat.bg} flex items-center justify-center`}>
-                        <stat.icon className={`h-4.5 w-4.5 ${stat.color}`} />
-                    </div>
-                </CardContent>
-            </Card>
+            <div key={i} className="flex items-center gap-3 px-1">
+                <div className={`h-8 w-8 rounded-lg ${stat.bg} flex items-center justify-center shrink-0`}>
+                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+                <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate leading-none mb-1">{stat.label}</p>
+                    <p className="text-base font-bold text-slate-900 tracking-tight leading-none">{stat.value}</p>
+                </div>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="px-6 py-4 shrink-0">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-2 rounded-xl border border-slate-200/60 shadow-sm">
-           <div className="flex items-center gap-4 flex-1">
-              <div className="relative w-full sm:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input 
-                   placeholder="Search by ID or subject..." 
-                   value={search}
-                   onChange={(e) => setSearch(e.target.value)}
-                   className="pl-9 bg-slate-50/50 border-slate-200/60 focus-visible:ring-indigo-500 h-9 text-sm"
-                />
-              </div>
-              <Separator orientation="vertical" className="h-6 hidden sm:block" />
-              <div className="flex items-center gap-2">
-                 <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="w-[130px] h-9 text-xs bg-slate-50/50 border-slate-200/60">
-                       <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                       <SelectItem value="all">All Status</SelectItem>
-                       <SelectItem value="open">Open</SelectItem>
-                       <SelectItem value="in_progress">In Progress</SelectItem>
-                       <SelectItem value="resolved">Resolved</SelectItem>
-                       <SelectItem value="closed">Closed</SelectItem>
-                    </SelectContent>
-                 </Select>
-                 <Select value={priority} onValueChange={setPriority}>
-                    <SelectTrigger className="w-[130px] h-9 text-xs bg-slate-50/50 border-slate-200/60">
-                       <SelectValue placeholder="Priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                       <SelectItem value="all">All Priority</SelectItem>
-                       <SelectItem value="low">Low</SelectItem>
-                       <SelectItem value="medium">Medium</SelectItem>
-                       <SelectItem value="high">High</SelectItem>
-                       <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                 </Select>
-              </div>
-           </div>
-           <Button variant="ghost" size="sm" className="text-slate-500 h-9 px-3 gap-2">
-              <Filter className="h-4 w-4" />
-              More Filters
-           </Button>
+      {/* Modern Filter Toolbar */}
+      <div className="px-6 py-3 shrink-0 border-b bg-slate-50/50">
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-green-600 transition-colors" />
+            <Input 
+                placeholder="Search by ID or subject..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-8 text-[13px] bg-white border-slate-200 focus-visible:ring-green-600 transition-all shadow-sm"
+            />
+          </div>
+          
+          <div className="flex items-center gap-2 ml-auto">
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="w-[120px] h-8 text-xs bg-white border-slate-200 focus:ring-green-600">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="resolved">Resolved</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger className="w-[120px] h-8 text-xs bg-white border-slate-200 focus:ring-green-600">
+                <SelectValue placeholder="Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priority</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
       {/* Content Table */}
-      <div className="flex-1 overflow-hidden px-6 pb-6">
-         <Card className="h-full border-slate-200/60 shadow-sm flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full flex flex-col">
             <DataTable 
                columns={columns as any}
                data={tickets}
@@ -199,7 +194,7 @@ export default function SupportTicketsPage() {
                onRowClick={handleView}
             />
             
-            <div className="px-5 py-3 border-t bg-slate-50/30 shrink-0">
+            <div className="px-6 py-3 border-t bg-white shrink-0">
                <Pagination 
                   currentPage={page}
                   totalPages={totalPages}
@@ -212,7 +207,7 @@ export default function SupportTicketsPage() {
                   }}
                />
             </div>
-         </Card>
+        </div>
       </div>
 
       {/* Ticket Detail Drawer */}

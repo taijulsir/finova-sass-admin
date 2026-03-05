@@ -48,24 +48,24 @@ export const getSupportTicketColumns = ({
   onView,
   onAssign,
   onStatusChange,
-}: GetColumnsProps): ColumnDef<SupportTicket>[] => [
+}: GetColumnsProps): any[] => [
   {
     accessorKey: "ticketId",
     header: "ID",
-    cell: ({ row }) => (
+    cell: (ticket: SupportTicket) => (
       <span className="font-mono text-xs font-bold text-slate-500">
-        {row.getValue("ticketId")}
+        {ticket.ticketId}
       </span>
     ),
   },
   {
     accessorKey: "subject",
     header: "Subject",
-    cell: ({ row }) => (
+    cell: (ticket: SupportTicket) => (
       <div className="flex flex-col max-w-[200px]">
-        <span className="font-medium truncate">{row.getValue("subject")}</span>
+        <span className="font-medium truncate text-slate-900">{ticket.subject}</span>
         <span className="text-[10px] text-muted-foreground truncate">
-          {row.original.organizationId?.name}
+          {ticket.organizationId?.name || "No Organization"}
         </span>
       </div>
     ),
@@ -73,8 +73,8 @@ export const getSupportTicketColumns = ({
   {
     accessorKey: "priority",
     header: "Priority",
-    cell: ({ row }) => {
-      const priority = row.getValue("priority") as string;
+    cell: (ticket: SupportTicket) => {
+      const priority = ticket.priority;
       const config = {
         low: { label: "Low", className: "bg-slate-100 text-slate-600 border-slate-200" },
         medium: { label: "Medium", className: "bg-blue-50 text-blue-600 border-blue-200" },
@@ -92,8 +92,8 @@ export const getSupportTicketColumns = ({
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string;
+    cell: (ticket: SupportTicket) => {
+      const status = ticket.status;
       const config = {
         open: { label: "Open", icon: AlertCircle, className: "bg-emerald-50 text-emerald-600 border-emerald-200" },
         in_progress: { label: "In Progress", icon: Clock, className: "bg-blue-50 text-blue-600 border-blue-200" },
@@ -114,8 +114,8 @@ export const getSupportTicketColumns = ({
   {
     accessorKey: "assignedAdmin",
     header: "Assigned To",
-    cell: ({ row }) => {
-      const admin = row.original.assignedAdmin;
+    cell: (ticket: SupportTicket) => {
+      const admin = ticket.assignedAdmin;
       return (
         <span className="text-xs text-slate-600">
           {admin ? admin.name : "Unassigned"}
@@ -126,49 +126,40 @@ export const getSupportTicketColumns = ({
   {
     accessorKey: "lastReplyAt",
     header: "Last Activity",
-    cell: ({ row }) => (
+    cell: (ticket: SupportTicket) => (
       <span className="text-[11px] text-slate-400">
-        {formatDistanceToNow(new Date(row.getValue("lastReplyAt")), { addSuffix: true })}
+        {formatDistanceToNow(new Date(ticket.lastReplyAt), { addSuffix: true })}
       </span>
     ),
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const ticket = row.original;
-
+    header: "Actions",
+    isAction: true,
+    cell: (ticket: SupportTicket) => {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-100">
+            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-100 rounded-lg">
               <MoreHorizontal className="h-4 w-4 text-slate-400" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[160px]">
-            <DropdownMenuLabel className="text-[10px] font-bold uppercase text-slate-400">Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onView(ticket)} className="gap-2 cursor-pointer">
-              <Eye className="h-3.5 w-3.5" /> View Drawer
+          <DropdownMenuContent align="end" className="w-[160px] rounded-xl border-slate-200 shadow-xl">
+            <DropdownMenuLabel className="text-[10px] font-bold uppercase text-slate-400 px-3 py-2">Entry ID: {ticket.ticketId}</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-slate-100" />
+            <DropdownMenuItem onClick={() => onView(ticket)} className="gap-2 cursor-pointer font-medium">
+              <Eye className="h-3.5 w-3.5 text-slate-400" /> View Details
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAssign(ticket)} className="gap-2 cursor-pointer">
-              <UserPlus className="h-3.5 w-3.5" /> Assign Admin
+            <DropdownMenuItem onClick={() => onAssign(ticket)} className="gap-2 cursor-pointer font-medium">
+              <UserPlus className="h-3.5 w-3.5 text-green-600" /> Assign To Me
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {ticket.status !== 'resolved' && (
-              <DropdownMenuItem 
-                onClick={() => onStatusChange(ticket, 'resolved')}
-                className="gap-2 cursor-pointer text-emerald-600 focus:text-emerald-600"
-              >
-                <CheckCircle className="h-3.5 w-3.5" /> Mark Resolved
-              </DropdownMenuItem>
-            )}
-            {ticket.status !== 'closed' && (
-              <DropdownMenuItem 
-                onClick={() => onStatusChange(ticket, 'closed')}
-                className="gap-2 cursor-pointer text-slate-600 focus:text-slate-600"
-              >
-                <XCircle className="h-3.5 w-3.5" /> Close Ticket
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuSeparator className="bg-slate-100" />
+            <DropdownMenuItem onClick={() => onStatusChange(ticket, 'resolved')} className="gap-2 cursor-pointer font-medium text-green-600">
+              <CheckCircle className="h-3.5 w-3.5" /> Mark Resolved
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onStatusChange(ticket, 'closed')} className="gap-2 cursor-pointer font-medium text-red-600">
+              <XCircle className="h-3.5 w-3.5" /> Close Ticket
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
