@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
-import { Upload, X, Camera, Loader2 } from "lucide-react";
+import { Upload, X, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/lib/store";
 
 /**
  * ImageUploader
@@ -25,6 +24,7 @@ interface ImageUploaderProps {
   width?: number;
   height?: number;
   className?: string;
+  dropzoneClassName?: string;
   shape?: "circle" | "square";
   label?: string;
 }
@@ -36,6 +36,7 @@ export function ImageUploader({
   width = 500,          // kept for resolveAvatar context
   height = 500,         // kept for resolveAvatar context
   className,
+  dropzoneClassName,
   shape = "square",
   label = "Upload Image",
 }: ImageUploaderProps) {
@@ -86,7 +87,8 @@ export function ImageUploader({
           "relative border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-all cursor-pointer flex items-center justify-center overflow-hidden bg-muted/30 group",
           shape === "circle"
             ? "rounded-full aspect-square w-32"
-            : "rounded-xl aspect-video w-full max-w-sm"
+            : "rounded-xl aspect-video w-full max-w-sm",
+          dropzoneClassName
         )}
       >
         <input
