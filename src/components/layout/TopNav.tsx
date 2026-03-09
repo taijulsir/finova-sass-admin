@@ -9,7 +9,6 @@ import {
   Search,
   Settings,
   Shield,
-  User,
   UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,13 @@ import {
 export function TopNav() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const displayName = user?.name || "Admin User";
+  const initials = (displayName || "A")
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const handleLogout = () => {
     logout();
@@ -85,8 +91,12 @@ export function TopNav() {
               size="icon"
               className="rounded-full ring-offset-background focus-visible:ring-2 focus-visible:ring-primary/20 cursor-pointer"
             >
-              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                <User className="h-4 w-4 text-muted-foreground" />
+              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={displayName} className="h-8 w-8 object-cover" />
+                ) : (
+                  <span className="text-[11px] font-semibold text-muted-foreground">{initials}</span>
+                )}
               </div>
             </Button>
           </DropdownMenuTrigger>
@@ -94,12 +104,16 @@ export function TopNav() {
             {/* ── User info header ── */}
             <div className="px-4 py-3 border-b border-muted">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
-                  <User className="h-4.5 w-4.5 text-muted-foreground" />
+                <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={displayName} className="h-9 w-9 object-cover" />
+                  ) : (
+                    <span className="text-[11px] font-semibold text-muted-foreground">{initials}</span>
+                  )}
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">
-                    {user?.name ?? "Admin User"}
+                    {displayName}
                   </span>
                   <span className="text-xs text-muted-foreground truncate">
                     {user?.email ?? "admin@finova.io"}

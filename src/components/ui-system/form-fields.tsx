@@ -60,7 +60,7 @@ export function ShortTextInput<T extends FieldValues>({
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-400 hover:text-indigo-600 transition-colors focus:outline-none"
+                      className="text-gray-400 hover:text-emerald-600 transition-colors focus:outline-none"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

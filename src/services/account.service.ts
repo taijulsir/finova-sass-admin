@@ -15,7 +15,8 @@ export interface ChangePasswordDto {
 }
 
 export interface UserProfile {
-  id: string;
+  _id?: string;
+  id?: string;
   name: string;
   email: string;
   phone?: string;
@@ -56,18 +57,29 @@ export interface LoginHistoryParams {
   limit?: number;
 }
 
+// Normalize MongoDB _id to id and ensure twoFactorEnabled exists
+function normalizeProfile(raw: any): UserProfile {
+  return {
+    ...raw,
+    id: raw._id?.toString() ?? raw.id,
+    twoFactorEnabled: raw.twoFactorEnabled ?? false,
+    phone: raw.phone ?? '',
+    timezone: raw.timezone ?? 'UTC',
+  };
+}
+
 // ── Service ─────────────────────────────────────────────────────────────────────
 
 export const AccountService = {
-  // Profile
+  // Profile  — backend returns { data: { user: {...} } }
   getProfile: async (): Promise<UserProfile> => {
     const { data } = await api.get('/account/profile');
-    return data.data;
+    return normalizeProfile(data.data?.user ?? data.data);
   },
 
   updateProfile: async (dto: UpdateProfileDto): Promise<UserProfile> => {
     const { data } = await api.patch('/account/profile', dto);
-    return data.data;
+    return normalizeProfile(data.data?.user ?? data.data);
   },
 
   // Password
@@ -90,10 +102,10 @@ export const AccountService = {
     await api.post('/account/2fa/disable', { token });
   },
 
-  // Sessions
+  // Sessions  — backend returns { data: { sessions: [...] } }
   getSessions: async (): Promise<UserSession[]> => {
     const { data } = await api.get('/account/sessions');
-    return data.data;
+    return data.data?.sessions ?? data.data ?? [];
   },
 
   revokeSession: async (sessionId: string): Promise<void> => {
