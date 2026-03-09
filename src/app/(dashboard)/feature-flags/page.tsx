@@ -85,7 +85,7 @@ export default function FeatureFlagsPage() {
   }), [handleEdit, handleDelete, handleToggleGlobal, handleManageOrgs]);
 
   const stats = [
-    { label: "Active Flags", value: flags.length, icon: ToggleLeft, bg: "bg-indigo-50", color: "text-indigo-600" },
+    { label: "Active Flags", value: flags.length, icon: ToggleLeft, bg: "bg-emerald-50", color: "text-emerald-600" },
     { label: "Global", value: flags.filter(f => f.enabledGlobal).length, icon: Globe, bg: "bg-emerald-50", color: "text-emerald-600" },
     { label: "Per-Org", value: flags.filter(f => f.perOrganizationEnabled).length, icon: Building2, bg: "bg-amber-50", color: "text-amber-600" },
     { label: "Total Orgs", value: "All Active", icon: ShieldCheck, bg: "bg-purple-50", color: "text-purple-600" },

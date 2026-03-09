@@ -63,7 +63,7 @@ export const getContactSubmissionColumns = ({
       const type = submission.type;
       const config = {
         contact: { label: "Contact", className: "bg-blue-50 text-blue-600 border-blue-200" },
-        feedback: { label: "Feedback", className: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+        feedback: { label: "Feedback", className: "bg-emerald-50 text-emerald-600 border-emerald-200" },
         feature_request: { label: "Feature", className: "bg-purple-50 text-purple-600 border-purple-200" },
         bug_report: { label: "Bug", className: "bg-red-50 text-red-600 border-red-200" },
       }[type] || { label: type, className: "" };

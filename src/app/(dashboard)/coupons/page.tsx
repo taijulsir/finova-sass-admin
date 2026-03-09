@@ -78,7 +78,7 @@ export default function CouponsPage() {
 
   const stats = [
     { label: "Active", value: summary?.activeCoupons ?? 0, icon: Activity, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { label: "Use Count", value: summary?.totalRedemptions ?? 0, icon: Users, color: "text-indigo-500", bg: "bg-indigo-50" },
+    { label: "Use Count", value: summary?.totalRedemptions ?? 0, icon: Users, color: "text-emerald-500", bg: "bg-emerald-50" },
     { label: "Savings", value: `$${summary?.totalDiscountGiven ?? 0}`, icon: DollarSign, color: "text-amber-500", bg: "bg-amber-50" },
     { label: "Impact", value: "High", icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-50" },
   ];
@@ -143,8 +143,8 @@ export default function CouponsPage() {
           <div className="flex-1 overflow-auto">
             {totalItems === 0 && !loading ? (
               <div className="flex flex-col items-center justify-center h-full py-12 px-4 text-center">
-                <div className="h-16 w-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
-                  <Tag className="h-8 w-8 text-indigo-500" />
+                <div className="h-16 w-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
+                  <Tag className="h-8 w-8 text-emerald-500" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">No coupons created yet</h3>
                 <p className="text-slate-500 max-w-xs mt-1 mb-6">Create your first coupon to start offering discounts to your customers.</p>
