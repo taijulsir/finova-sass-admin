@@ -46,7 +46,7 @@ export function FeedbackDrawer({
   
   const typeConfig = {
     contact: { label: "Contact", color: "bg-blue-50 text-blue-600 border-blue-200" },
-    feedback: { label: "Feedback", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+    feedback: { label: "Feedback", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
     feature_request: { label: "Feature Request", color: "bg-purple-50 text-purple-600 border-purple-200" },
     bug_report: { label: "Bug Report", color: "bg-red-50 text-red-600 border-red-200" },
   }[submission.type as string] || { label: submission.type, color: "" };
@@ -113,7 +113,7 @@ export function FeedbackDrawer({
           {/* Submittor Info Section */}
           <section className="space-y-4">
              <div className="flex items-center gap-2 mb-2">
-               <div className="h-1 bg-indigo-500 w-4 rounded-full" />
+               <div className="h-1 bg-emerald-500 w-4 rounded-full" />
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Submittor Details</p>
              </div>
              

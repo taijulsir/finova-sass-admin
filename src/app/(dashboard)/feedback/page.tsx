@@ -167,7 +167,7 @@ export default function FeedbackPage() {
     { label: "New Leads", value: submissions.filter(s => s.status === 'new').length, icon: Inbox, color: "text-emerald-500", bg: "bg-emerald-50", trend: "+12%" },
     { label: "Contact Requests", value: submissions.filter(s => s.type === 'contact').length, icon: Activity, color: "text-blue-500", bg: "bg-blue-50", trend: "+5%" },
     { label: "Bug Reports", value: submissions.filter(s => s.type === 'bug_report').length, icon: AlertTriangle, color: "text-red-500", bg: "bg-red-50", trend: "-2%" },
-    { label: "Responded", value: submissions.filter(s => s.status !== 'new').length, icon: MailCheck, color: "text-indigo-500", bg: "bg-indigo-50", trend: "86%" },
+    { label: "Responded", value: submissions.filter(s => s.status !== 'new').length, icon: MailCheck, color: "text-emerald-500", bg: "bg-emerald-50", trend: "86%" },
   ];
 
   return (

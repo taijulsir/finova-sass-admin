@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, Globe, Camera, Loader2, Check } from "lucide-react";
+import { User, Mail, Phone, Globe, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,9 @@ import {
 import { AccountService, UserProfile, UpdateProfileDto } from "@/services/account.service";
 import { useAuthStore } from "@/lib/store";
 import { toast } from "sonner";
+import { ImageUploader, resolveAvatar } from "@/components/ui/image-uploader/image-uploader";
+import { AdminService } from "@/services/admin.service";
+import { isAxiosError } from "axios";
 
 const TIMEZONES = [
   "UTC",
@@ -46,6 +49,7 @@ interface Props {
 
 export function ProfileSection({ profile, onProfileUpdated }: Props) {
   const { user, setUser } = useAuthStore();
+  const [avatarValue, setAvatarValue] = useState<File | string | undefined>(profile.avatar);
   const [form, setForm] = useState<UpdateProfileDto>({
     name: profile.name,
     phone: profile.phone ?? "",
@@ -55,6 +59,7 @@ export function ProfileSection({ profile, onProfileUpdated }: Props) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    setAvatarValue(profile.avatar);
     setForm({
       name: profile.name,
       phone: profile.phone ?? "",
@@ -74,21 +79,30 @@ export function ProfileSection({ profile, onProfileUpdated }: Props) {
       return;
     }
     setSaving(true);
+    let uploadedAvatarUrl: string | null = null;
     try {
-      const updated = await AccountService.updateProfile(form);
+      const avatarUrl = await resolveAvatar(avatarValue, "users", 200, 200);
+      if (avatarUrl && avatarValue instanceof File) uploadedAvatarUrl = avatarUrl;
+      const updated = await AccountService.updateProfile({ ...form, avatar: avatarUrl });
       onProfileUpdated(updated);
       // sync name/avatar to auth store
       if (user) setUser({ ...user, name: updated.name, avatar: updated.avatar });
       setDirty(false);
       toast.success("Profile updated successfully");
-    } catch {
-      toast.error("Failed to update profile");
+    } catch (err: unknown) {
+      if (uploadedAvatarUrl) {
+        AdminService.deleteUploadedImage(uploadedAvatarUrl).catch(() => {});
+      }
+      const message = isAxiosError(err)
+        ? (err.response?.data as { message?: string } | undefined)?.message ?? err.message
+        : err instanceof Error
+          ? err.message
+          : "Failed to update profile";
+      toast.error(message);
     } finally {
       setSaving(false);
     }
   };
-
-  const avatarInitial = profile.name?.charAt(0).toUpperCase() ?? "A";
 
   return (
     <Card>
@@ -99,26 +113,22 @@ export function ProfileSection({ profile, onProfileUpdated }: Props) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
-        {/* Avatar */}
         <div className="flex items-center gap-4">
-          <div className="relative group">
-            {profile.avatar ? (
-              <img
-                src={profile.avatar}
-                alt={profile.name}
-                className="h-16 w-16 rounded-full object-cover ring-2 ring-muted-foreground/10"
-              />
-            ) : (
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center ring-2 ring-muted-foreground/10 text-primary font-semibold text-xl">
-                {avatarInitial}
-              </div>
-            )}
-            <button
-              className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              title="Upload avatar (coming soon)"
-            >
-              <Camera className="h-4 w-4 text-white" />
-            </button>
+          <div className="w-16">
+            <ImageUploader
+              value={avatarValue}
+              onChange={(value) => {
+                setAvatarValue(value);
+                setDirty(true);
+              }}
+              label=""
+              shape="circle"
+              width={200}
+              height={200}
+              folder="users"
+              className="w-16"
+              dropzoneClassName="w-16 h-16"
+            />
           </div>
           <div>
             <p className="text-sm font-medium">{profile.name}</p>
