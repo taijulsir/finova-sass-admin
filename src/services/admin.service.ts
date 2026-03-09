@@ -399,4 +399,14 @@ export const AdminService = {
     const { data } = await api.post(`/crm/admin/contact-submissions/${id}/convert-to-ticket`, payload);
     return data;
   },
+
+  // --- Billing Events ---
+  getBillingEvents: async (params: any) => {
+    const { data } = await api.get('/finance/admin/billing-events', { params });
+    return data;
+  },
+  getBillingEventDetails: async (id: string) => {
+    const { data } = await api.get(`/finance/admin/billing-events/${id}`);
+    return data;
+  },
 }

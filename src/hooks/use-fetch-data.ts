@@ -32,19 +32,18 @@ export function useFetchData<T>(
     try {
       setLoading(true);
       const response = await fetchFn(params);
+      console.log("Fetch response:", response);
       
       // Standardize response access based on typical project structure
   // Response shapes vary between endpoints. Normalize common shapes:
   // - { data: [...] , pagination: { total, totalPages } }
   // - { data: [...], meta: { total, page, totalPages } }
   // - direct array in response.data
-  const results = (response && (response.data ?? response)) || [];
+  const results = response?.data?.data || response?.data || response || [];
 
-  // pagination can live under pagination or meta
-  const pagination = response?.pagination || response?.meta || { total: 0, totalPages: 1 };
+  // pagination can live under data or meta
+  const pagination = response?.data || response?.meta || { total: 0, totalPages: 1 };
 
-  // If backend returns { success: true, data: [...], meta: { total } }
-  // and we received that object as `response`, then results will be response.data
   setData(Array.isArray(results) ? results : []);
   setTotalItems(pagination.total ?? 0);
   setTotalPages(pagination.totalPages ?? 1);
